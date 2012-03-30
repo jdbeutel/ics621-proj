@@ -1,0 +1,15 @@
+Project: Cache-Oblivious Lookahead Array (COLA)
+
+To make a dictionary persistent, and let it grow larger than main memory, it's normally written to rotating disk.  A popular data structure for that is the B-tree.  But, as disk density and throughput keeps increasing, seek time has not kept up.  B-trees require random access for random inserts or range queries, suffering from the slow seek time.  How can we get inserts and queries commensurate with today's disks?
+
+In "Cache-Oblivious Streaming B-trees" (2007)[1] (downloadable from [2]), Bender et al. present a solution:  the cache-oblivious lookahead array.  COLA grows like a binomial heap, but each level is a sorted array, converting random inserts at lower levels in main memory to sequential writes of higher levels to disk.  To provide queries in O(log N) IO block transfers, COLA uses fractional cascading:  lookahead pointers that limit the scanning needed at each level.
+
+For this project, I'd like to implement and analyse the simplest COLA described by Bender[2] section 3, as well as a B+ tree.  For the empirical experiment, I'll use a simulated disk access machine, in a Groovy implementation, to compare and confirm insert and query results (like [2] section 4).
+
+Schedule:
+April 13 - implement and analyse 2-COLA non-deamortization
+April 20 - implement and analyse B+ tree
+April 27 - prepare presentation and report
+
+[1] http://dl.acm.org/citation.cfm?id=1248393
+[2] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.114.3367
