@@ -1,0 +1,43 @@
+<html>
+  <head>
+    <script type="text/javascript" src="js-graph-it.js"></script>
+    <link rel="stylesheet" type="text/css" href="js-graph-it.css">
+    <style>
+      .canvas {
+        font-family: tahoma;
+      }
+      .block {
+        position: absolute;
+        border: 1px solid #7DAB76;
+        background-color: #BAFFB0;
+        padding: 3px;
+      }
+      .connector {
+        background-color: #FF9900;
+      }
+      .source-label, .middle-label, .destination-label {
+        padding: 5px;
+      }
+    </style>
+  </head>
+  <body onload="initPageObjects();">
+    <div class="canvas" id="mainCanvas"
+      style="width: 350px; height: 250px; border: 1px solid black;">
+      <h1 class="block draggable" id="h1_block"
+        style="left: 10px; top: 10px;">
+          h1 block
+      </h1>
+      <h2 class="block draggable" id="h2_block"
+        style="left: 200px; top: 100px;">
+        h2 block
+      </h2>
+      <div class="connector h1_block h2_block down_start down_end">
+        <img src="arrow.gif" class="connector-start">
+        <img src="arrow.gif" class="connector-end">
+        <label class="source-label">start</label>
+        <label class="middle-label">middle</label>
+        <label class="destination-label">end</label>
+      </div>
+    </div>
+  </body>
+</html>
