@@ -15,9 +15,9 @@
 	height: 1px;
 	width: 1px;
 	overflow: hidden;
-	padding: 0px !important;
+	padding: 0 !important;
 	border: none !important;
-	margin: 0px !important;
+	margin: 0 !important;
 	position: absolute;
 	font-size: 1px;
 	visibility: hidden;
