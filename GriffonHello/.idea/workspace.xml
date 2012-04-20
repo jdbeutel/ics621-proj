@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="32efada0-b9c9-40dc-b1de-e92f272e5b4e" name="Default" comment="">
       <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/application.properties" afterPath="$PROJECT_DIR$/application.properties" />
     </list>
     <ignored path="GriffonHello.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -374,7 +373,7 @@
     <option name="SHOW_VCS_ERROR_NOTIFICATIONS" value="true" />
     <option name="FORCE_NON_EMPTY_COMMENT" value="false" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="false" />
-    <option name="LAST_COMMIT_MESSAGE" value="quick-start hello world" />
+    <option name="LAST_COMMIT_MESSAGE" value="removed workspace.xml from git" />
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="false" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_FILES_UP_TO_DATE_BEFORE_COMMIT" value="false" />
@@ -389,6 +388,7 @@
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.6" />
     <MESSAGE value="created IntelliJ project for GriffonHello" />
     <MESSAGE value="quick-start hello world" />
+    <MESSAGE value="removed workspace.xml from git" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
