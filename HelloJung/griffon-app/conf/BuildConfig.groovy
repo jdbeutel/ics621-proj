@@ -168,10 +168,14 @@ griffon.project.dependency.resolution = {
         //mavenRepo "http://download.java.net/maven/2/"
         //mavenRepo "http://repository.jboss.com/maven2/"
     }
+//    plugins {     // would IntelliJ recognize this, although it doesn't see it in application.properties?
+//        runtime(':jung:0.5')
+//    }
     dependencies {
         // specify dependencies here under either 'build', 'compile', 'runtime' or 'test' scopes eg.
 
         // runtime 'mysql:mysql-connector-java:5.1.5'
+        compile 'org.codehaus.griffon:jsilhouette-geom:0.4'
     }
 }
 
