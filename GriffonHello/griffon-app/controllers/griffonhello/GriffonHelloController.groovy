@@ -1,9 +1,29 @@
 package griffonhello
 
+import java.awt.event.ActionEvent
+
 class GriffonHelloController {
+
+    GroovyShell shell = new GroovyShell()
+
     // these will be injected by Griffon
-    def model
+    GriffonHelloModel model
     def view
+
+    def executeScript(ActionEvent evt = null) {
+        model.enabled = false
+        doOutside {
+            def result
+            try {
+                result = shell.evaluate(model.scriptSource)
+            } finally {
+                edt {
+                    model.enabled = true
+                    model.scriptResult = result
+                }
+            }
+        }
+    }
 
     // void mvcGroupInit(Map args) {
     //    // this method is called after model and view are injected
