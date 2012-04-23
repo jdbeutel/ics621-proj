@@ -1,7 +1,7 @@
 package helloprocessing
 
 application(title: 'HelloProcessing',
-  preferredSize: [320, 240],
+  preferredSize: [800, 600],
   pack: true,
   //location: [50,50],
   locationByPlatform:true,
@@ -11,4 +11,5 @@ application(title: 'HelloProcessing',
                imageIcon('/griffon-icon-16x16.png').image]) {
     // add content here
     label('Content Goes Here') // delete me
+    processing(model.pApplet)
 }

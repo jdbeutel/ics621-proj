@@ -19,7 +19,7 @@ public class HiThereProcessingView extends AbstractGriffonProcessingView {
     // The statements in the setup() function 
     // execute once when the program begins
     public void setup() {
-        size(200, 200);  // Size should be the first statement
+        size(500, 500);  // Size should be the first statement
         stroke(255);     // Set line drawing color to white
         frameRate(30);
     }

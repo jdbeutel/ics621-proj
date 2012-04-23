@@ -3,5 +3,5 @@ package helloprocessing
 import groovy.beans.Bindable
 
 class HelloProcessingModel {
-   // @Bindable String propName
+   @Bindable pApplet = new HiThereProcessingView()  // todo: official way, using DI?
 }
