@@ -9,6 +9,13 @@ application {
     //frameClass = 'javax.swing.JFrame'
 }
 mvcGroups {
+    // MVC Group for "hiThere"
+    'hiThere' {
+        model      = 'helloprocessing.HiThereModel'
+        view       = 'helloprocessing.HiThereView'
+        controller = 'helloprocessing.HiThereController'
+    }
+
     // MVC Group for "helloProcessing"
     'helloProcessing' {
         model      = 'helloprocessing.HelloProcessingModel'
