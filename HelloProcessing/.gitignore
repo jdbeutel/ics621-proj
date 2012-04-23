@@ -1,0 +1,6 @@
+/dist
+/staging
+/stacktrace
+/log
+*.iws
+/.idea/workspace.xml
