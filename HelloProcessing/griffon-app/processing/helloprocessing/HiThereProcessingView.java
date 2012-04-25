@@ -14,14 +14,24 @@ public class HiThereProcessingView extends AbstractGriffonProcessingView {
         this.controller = controller;
     }
 
-    private float y = 100;
+    // Global variables
 
-    // The statements in the setup() function 
+    float radius = 50.0f;
+    int X, Y;
+    int nX, nY;
+    int delay = 16;
+
+    // Setup the Processing Canvas
+    // The statements in the setup() function
     // execute once when the program begins
     public void setup() {
-        size(500, 500);  // Size should be the first statement
-        stroke(255);     // Set line drawing color to white
-        frameRate(30);
+        size(400, 400);     // Size should be the first statement
+        strokeWeight(10);
+        frameRate(15);
+        X = width / 2;
+        Y = width / 2;
+        nX = X;
+        nY = Y;
     }
 
     // The statements in draw() are executed until the 
@@ -29,9 +39,29 @@ public class HiThereProcessingView extends AbstractGriffonProcessingView {
     // sequence and after the last line is read, the first 
     // line is executed again.
     public void draw() {
-        background(0);   // Set the background to black
-        y = y - 1; 
-        if (y < 0) { y = height; } 
-        line(0, y, width, y); 
+
+        radius = radius + sin((float) (frameCount / 4));
+
+        // Track circle to new destination
+        X += (nX - X) / delay;
+        Y += (nY - Y) / delay;
+
+        // Fill canvas grey
+        background(100);
+
+        // Set fill-color to blue
+        fill(0, 121, 184);
+
+        // Set stroke-color white
+        stroke(255);
+
+        // Draw circle
+        ellipse(X, Y, radius, radius);
+    }
+
+    // Set circle's next destination
+    public void mouseMoved() {
+        nX = mouseX;
+        nY = mouseY;
     }
 }
