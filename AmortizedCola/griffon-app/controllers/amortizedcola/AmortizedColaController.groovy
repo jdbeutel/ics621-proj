@@ -5,9 +5,11 @@ class AmortizedColaController {
     def model
     def view
 
-    // void mvcGroupInit(Map args) {
-    //    // this method is called after model and view are injected
-    // }
+    // this method is called after model and view are injected
+    void mvcGroupInit(Map args) {
+        model.pApplet.model = model     // todo: redundant?
+        // model.pApplet.init()         // todo: necessary?
+    }
 
     // void mvcGroupDestroy() {
     //    // this method is called when the group is destroyed

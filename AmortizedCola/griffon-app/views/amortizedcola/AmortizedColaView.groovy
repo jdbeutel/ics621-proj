@@ -11,4 +11,5 @@ application(title: 'AmortizedCola',
                imageIcon('/griffon-icon-16x16.png').image]) {
     // add content here
     label('Content Goes Here') // delete me
+    processing(model.pApplet)
 }
