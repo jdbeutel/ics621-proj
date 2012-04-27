@@ -23,4 +23,12 @@ class Level {
     def search(key, int lower) {
         array.search(key, lower)
     }
+
+    boolean getAvailable() {
+        array.nItems == 0
+    }
+
+    void addItem(Item item) {
+        array.addItem(item)
+    }
 }

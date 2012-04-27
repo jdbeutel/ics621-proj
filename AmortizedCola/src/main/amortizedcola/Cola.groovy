@@ -17,10 +17,8 @@ class Cola {
 
     void insert(key, value) {
         def item = new Item(key, value)
-        def a = levels[1].array
-        if (a.nItems == 0) {
-            a.elements[0] = item
-            a.nItems++
+        if (levels[1].available) {
+            levels[1].addItem(item)
         } else {
             merge(item)
         }
@@ -38,9 +36,23 @@ class Cola {
         result
     }
 
-    private void addLevel() {
+    private int addLevel() {
         def k = ++nLevels
         levels[k] = new Level(k)
+        k
     }
 
+    private void merge(Item item) {
+        int target = nextAvailableLevel
+        assert target > 1
+    }
+
+    private int getNextAvailableLevel() {
+        for (k in 1..nLevels) {
+            if (levels[k].available) {
+                return k
+            }
+        }
+        addLevel()
+    }
 }
