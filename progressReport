@@ -1,0 +1,34 @@
+Thursday, April 26, 2012
+
+My project is far behind schedule.  I've started implementing 2-COLA with a visualization of how the datastructure grows, for the presentation and my own understanding.  Unfortunately, I've had several problems:
+
+2-COLA issues:
+* The last array has nothing to lookahead to, but if there are no lookahead pointers, then there will not be a key in every 8th position for the lookahead target from the k-1 array.  [1] states that each level has 2^k elements, but only half are real, and half are lookahead pointers.  Should I put dumby lookahead pointers on the last level, or use every 4th position as the lookahead target?
+* The cascade that creates a new last array clears out every previous level.  So, level k-1 is empty, but it needs lookahead pointers to level k.  One quarter of a level's elements should be lookahead pointers, and normally one quarter would be duplicate lookahead pointers, but the duplicates wouldn't serve any purpose (without any real entries).  This lookahead target issue is similar to the one with the last array, but for a quarter of the elements instead of half.
+* What should be done with deleted or duplicate keys, e.g., inserted to update an older element?  Exclude the older/deleted element from the merge to the next level (and then deal with a partially full array), or store a placeholder forever?
+* The level 0 array is supposed to have 1 element (2^0).  But, the level 2 array is supposed to have a lookahead pointer, and a duplicate lookahead pointer for consistency, so only half of its 4 elements are real (like all the following arrays).  If more than half of the elements of any level are real, eventually they wouldn't fit into the merge of a level that has lookahead pointers.  It all starts with level 0; but we can't have half a real element.
+* Walking through my initial understanding of the deamortization algorithm, it seemed to loose visibility of the first four inserts after the tenth insert.
+
+Visualization issues:
+* Since I work with web apps all the time, I initially tried a basic JavaScript graph library[2] to draw arrows (lookahead pointers) connecting HTML elements.  However, it didn't seem like it could show the COLA growing and searching, because the browser needs to layout the whole web page on every update, and it's not fast or smooth enough.  (It might be made smoother if I implemented COLA itself in JavaScript or AJAX, but since my JavaScript skills are limited, I'm not going to try to use it beyond a visualization.)
+* Since I intend to implement COLA and B-tree simulation and analysis in Groovy, I next tried making a Griffon[3] app with Jung plugin[4].  JUNG[5] is the Java Universal Network/Graph Framework.  A quick google revealed several blog articles about what a nice framework it is with good documentation and tutorials, and the Hello World app worked, but when I tried to find documentation on how to lay out the graph I need for COLA, it seemed like the 9-year-old project had been abandoned last year.  The documentation for version 2 is mostly incomplete, although it was released 3 years ago.  Also, I had second thoughts about the complexity and speed of using a generic graph layout engine, since the structure of the COLA arrays can be static.
+
+Resolutions:
+* I managed to get 2 days off from work (today and tomorrow), so I have four whole more days to prepare my presentation for Monday.  I'll work on the paper after that.
+* I'm going to try to implement the visualization in Processing[6] as a Griffon plugin[7].  It's an active project, a simplified graphics library, that should allow me to quickly render a static COLA on a canvas.  I've been able to make a couple sample apps already.
+* If I can't implement the B-tree in time to present a comparison, then I'll present just the COLA on Monday, since we've already seen the B-tree in class.
+* I plan to take a screencast of the visualizations, saving and uploading the video to show in the presentation.  If I can't get this done by Sunday, I'll draw static diagrams to present instead, photographing hand-drawn on paper if necessary.
+* After re-reading the original paper[1] and related presentations, my current understanding is that arrays do not need to be full.  So, levels without lookahead pointers do not need duplicate or dumby pointers to fill them out.  The previous level may have less than half the lookahead pointers that it otherwise would, but there's no guarantee as to the spacing of those pointers anyway, and the duplicate lookahead pointers provide fast access to them, so their density need not be guaranteed either.  The important thing is the target density: searches traversing each level will still start within 8 (or 16) elements of their target.
+* I think I also understand now how the deamortization works.  To avoid loosing visibility, when merging into a level that already has one array, the lookahead pointers come from both arrays on that (now unsafe) level:  every 16th element of each (intead of every 8th).  The paper states this, but I didn't understand at first.
+* To avoid the issue with level 0, I'll start the COLA at level 1, with one real element.  Level k can have up to 2^(k-1) real elements.  The other element on level 1 will never be used, as two elements on level 2 won't be used when it doesn't have any lookahead pointer (i.e., when level 3 has no 8th element).  Level 0 would be redundant and inconsistent.
+* For deamortization, each array would have up to two visibility links (not occupying elements) to an array in the next level; otherwise, to use lookahead pointers for visibility, the COLA would need to start at level 3 with some guarantee that both level 4 arrays have at least 8 elements.  The paper[1] states that arrays are linked that way when merging from level 0 to level 1, even though it doesn't explain how it merges from level 1 to level 2 when level 2 contains lookahead pointers.
+* A referencing paper[8] points out that an amortized merge cascade can be implemented as a k-way merge into the next free level.  This allows for a nice visualization, with a single array on each level.  That paper also "percolates" arrays that have lost enough elements to fit in a previous level, but it doesn't implement fractional cascading (despite calling them "lookahead arrays"), and it doesn't seem compatible with deamortization, either.  In my project, I don't plan to address how to deal with a significant loss of elements.
+
+[1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.114.3367
+[2] http://js-graph-it.sourceforge.net/
+[3] http://griffon.codehaus.org/
+[4] http://griffon.codehaus.org/Jung+Plugin
+[5] http://jung.sourceforge.net/
+[6] http://processing.org/
+[7] http://griffon.codehaus.org/Processing+Plugin
+[8] http://dl.acm.org/citation.cfm?id=1914448
