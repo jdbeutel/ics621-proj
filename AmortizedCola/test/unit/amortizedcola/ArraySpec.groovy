@@ -58,7 +58,7 @@ class ArraySpec extends Specification {
         target
     }
 
-    @Unroll("item merges #description the look-ahead pointer")
+    @Unroll
     def "item merges #description the look-ahead pointer"() {
 
         given:

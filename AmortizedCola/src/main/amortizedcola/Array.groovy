@@ -57,7 +57,7 @@ class Array {
         int i = lower
         // find target key or next greater (if any)
         while (i < upperBoundExclusive) {
-            assert i - lower < 8    // look-ahead pointers provide a lower within 8 elements of target or greater
+            assert i - lower <= 8    // look-ahead pointers provide a lower within 8 elements of target or greater
             def x = elements[i]
             if (x.key == null || x.key < key) {
                 i++
@@ -67,7 +67,7 @@ class Array {
                 if (x instanceof RealLap) {
                     return [null, x.index]
                 } else {
-                    assert x instanceof Item
+                    assert x instanceof Item    // because all DupLap key are null
                     return [x.value, 0]         // found; stop looking ahead
                 }
             }
@@ -88,24 +88,36 @@ class Array {
             lowerBoundInclusive == upperBoundExclusive) {   // there are no elements at all
             return 0
         }
-        def r
+        def realLapIdx = 0
         if (nRight) {                       // only real look-ahead pointers
-            r = elements[lesserIdx]
+            realLapIdx = lesserIdx
         } else {
             assert nLeft > nItems + nRealLaps           // there must be duplicate look-ahead pointers
             int dupIdx = lesserIdx - (lesserIdx % 4)    // every index % 4 == 0
             assert dupIdx % 4 == 0
-            def d = elements[dupIdx]
-            assert d instanceof DupLap
-            if (d.right && d.right <= lesserIdx) {
-                r = elements[d.right]
-            } else if (d.left) {
-                assert d.left < lesserIdx
-                r = elements[d.left]
-            } else {
-                return 0    // duplicate pointer says that there is no less-than look-ahead pointer
+            // check for a real look-ahead pointer in at most the 3 most-recent elements
+            for (int i = lesserIdx; i > dupIdx; i--) {
+                if (elements[i] instanceof RealLap) {
+                    realLapIdx = i
+                    break
+                }
+            }
+            if (!realLapIdx) {
+                def d = elements[dupIdx]
+                assert d instanceof DupLap
+                if (d.left) {
+                    assert d.left < lesserIdx
+                    realLapIdx = d.left     // going back as far as necessary; could be optimized by storing a copy
+                } else {
+                    return 0    // there is no less-than look-ahead pointer
+                }
             }
         }
+        assert realLapIdx
+        for (int i = realLapIdx + 1; i < greaterIdx; i++) {
+            assert !(elements[i] instanceof RealLap)
+        }
+        def r = elements[realLapIdx]
         assert r instanceof RealLap
         assert r.key < key
         return r.index
@@ -176,6 +188,7 @@ class Array {
 
         // For any duplicate pointers to the left of the inserted real pointer,
         // up to the next real pointer, set their right-hand pointer to the index of the inserted real pointer.
+        // It's not used for a single-point search, but maybe it would be for a range search?
         assert elements[insertedIdx] == r
         for (i in (insertedIdx-1)..0) {
             def x = elements[i]
@@ -191,7 +204,7 @@ class Array {
     private void addElement(Element x) {
         assert merging
         if (nRealLaps && nLeft % 4 == 0) {  // need to add a duplicate look-ahead pointer here too
-            def d = new DupLap(left: lastRealLapIdx)
+            def d = new DupLap(left: lastRealLapIdx, right: lastRealLapIdx)
             elements[nLeft++] = d
         }
         elements[nLeft++] = x
