@@ -58,7 +58,8 @@ class ArraySpec extends Specification {
         target
     }
 
-    def "look-ahead pointer can be merged on finish"() {
+    @Unroll("item merges #description the look-ahead pointer")
+    def "item merges #description the look-ahead pointer"() {
 
         given:
         def target = createTarget4()
@@ -77,24 +78,25 @@ class ArraySpec extends Specification {
 
         when:
         a.startMerge()
-        a.addItem(new Item(15, 'new value'))
-
-        then:
-        a.nLeft == 2
-        a.elements[0] instanceof DupLap
-        a.elements[0].left == 0
-        a.elements[1].key == 15
-        a.nRight == 1
-
-
-        when:
+        a.addItem(new Item(itemKey, 'new value'))
         a.finishMerge()
 
         then:
         a.nLeft == 3
-        a.elements[0].right == 2
-        a.elements[2] instanceof RealLap
-        a.elements[2].key == 17
+        a.elements[0] instanceof DupLap
+        a.elements[0].left == 0
+        a.elements[0].right == lapIdx
+
+        and:
+        a.elements[itemIdx].key == itemKey
+        a.elements[lapIdx] instanceof RealLap
+        a.elements[lapIdx].key == 17
         a.nRight == 0
+
+        where:
+        description | itemKey   | itemIdx   | lapIdx
+        'before'    | 15        | 1         | 2
+        'after'     | 19        | 2         | 1
+        'equal to'  | 17        | 1         | 2
     }
 }
