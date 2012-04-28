@@ -18,4 +18,13 @@ class ArraySpec extends Specification {
         a.search(42, 0) == ['foo', 0]
         a.search(6, 0) == [null, 0]
     }
+
+    def 'empty level can be searched'() {
+
+        given:
+        def a = new Array(1)
+
+        expect:
+        a.search(42, 0) == [null, 0]
+    }
 }
