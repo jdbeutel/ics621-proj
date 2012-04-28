@@ -45,6 +45,38 @@ class Cola {
     private void merge(Item item) {
         int target = nextAvailableLevel
         assert target > 1
+        def iterators = []
+        def nextItems = []
+        for (k in 1..(target-1)) {
+            def itr = levels[k].itemIterator
+            iterators[k] = itr
+            nextItems[k] = itr.hasNext() ? itr.next() : null
+        }
+        levels[target].startMerge()
+        for (def item = firstLeastItem(nextItems); item; item = firstLeastItem(nextItems)) {
+            levels[target].addItem(item)
+            for (k in 1..(target-1)) {
+                if (nextItems[k]?.key == item.key) {
+                    def itr = iterators[k]
+                    nextItems[k] = itr.hasNext() ? itr.next() : null
+                }
+            }
+        }
+        levels[target].finishMerge()
+        for (k in (target-1)..1) {
+            levels[k].clear()
+            levels[k].addLaps(levels[k+1])
+        }
+    }
+
+    private static Item firstLeastItem(nextItems) {
+        Item least = null
+        nextItems.each {
+            if (it != null && (!least || it.key < least.key)) {
+                least = it
+            }
+        }
+        least
     }
 
     private int getNextAvailableLevel() {

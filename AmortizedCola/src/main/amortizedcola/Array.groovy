@@ -14,7 +14,7 @@ class Array {
     int nItems = 0
     int nRealLaps = 0
     int nLeft = 0   // merged items, on low side of array
-    int nRight = 0  // look-ahead pointers before merge, on high side of array
+    int nRight = 0  // look-ahead pointers only, before merge, on high side of array
     boolean merging = false
     int lastRealLapIdx = 0
 
@@ -23,6 +23,18 @@ class Array {
         this.k = k
         elements = new Element[2^k]
         maxItems = 2^(k-1)
+    }
+
+    void clear() {
+        assert !merging
+        nItems = 0
+        nRealLaps = 0
+        nLeft = 0
+        nRight = 0
+        lastRealLapIdx = 0
+        for (i in 0..(elements.size()-1)) {
+            elements[i] = null
+        }
     }
 
     private int getLowerBoundInclusive() {
@@ -181,5 +193,36 @@ class Array {
             moveNextLapFromRightToLeft()
         }
         merging = false
+    }
+
+    // source for merges
+    Iterator<Item> getItemIterator() {
+        new Iterator() {
+
+            int i = 0
+
+            @Override
+            boolean hasNext() {
+                while (i < nLeft && !(elements[i] instanceof Item)) {
+                    i++
+                }
+                i < nLeft
+            }
+
+            @Override
+            Object next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException()
+                }
+                def x = elements[i++]
+                assert x instanceof Item
+                x
+            }
+
+            @Override
+            void remove() {
+                throw new UnsupportedOperationException()
+            }
+        }
     }
 }

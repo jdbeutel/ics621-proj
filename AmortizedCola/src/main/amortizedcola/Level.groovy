@@ -28,7 +28,27 @@ class Level {
         array.nItems == 0
     }
 
+    void startMerge() {
+        array.startMerge()
+    }
+
+    void finishMerge() {
+        array.finishMerge()
+    }
+
     void addItem(Item item) {
         array.addItem(item)
+    }
+
+    Iterator<Item> getItemIterator() {
+        array.itemIterator
+    }
+
+    void clear() {
+        array.clear()
+    }
+
+    void addLaps(Level target) {
+        array.addLaps(target.array)
     }
 }
