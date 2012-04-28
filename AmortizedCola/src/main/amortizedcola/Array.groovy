@@ -126,9 +126,11 @@ class Array {
         nRight = nRealLaps  // in advance, to get lowerBoundInclusive
         assert lowerBoundInclusive + nRealLaps == upperBoundExclusive
         for (int i = 0; i < nRealLaps; i++) {
-            elements[lowerBoundInclusive + i] = target.elements[i*8 + 7 + target.lowerBoundInclusive]
+            int srcIdx = i + lowerBoundInclusive
+            int targetIdx = i*8 + 7 + target.lowerBoundInclusive
+            elements[srcIdx] = new RealLap(key: target.elements[targetIdx].key, index: targetIdx)
             if (i) {
-                assert elements[i-1].key < elements[i].key
+                assert elements[srcIdx-1].key < elements[srcIdx].key
             }
         }
     }
