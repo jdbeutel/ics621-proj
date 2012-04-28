@@ -18,7 +18,7 @@ class Cola {
     void insert(key, value) {
         def item = new Item(key, value)
         if (levels[1].available) {
-            levels[1].addItem(item)
+            levels[1].addOnlyItem(item)
         } else {
             merge(item)
         }
@@ -45,20 +45,22 @@ class Cola {
     private void merge(Item item) {
         int target = nextAvailableLevel
         assert target > 1
-        def iterators = []
-        def nextItems = []
+        List<Iterator<Item>> iterators = []
+        List<Item> nextItems = []
+        iterators[0] = null
+        nextItems[0] = item
         for (k in 1..(target-1)) {
             def itr = levels[k].itemIterator
             iterators[k] = itr
             nextItems[k] = itr.hasNext() ? itr.next() : null
         }
         levels[target].startMerge()
-        for (def item = firstLeastItem(nextItems); item; item = firstLeastItem(nextItems)) {
-            levels[target].addItem(item)
-            for (k in 1..(target-1)) {
-                if (nextItems[k]?.key == item.key) {
+        for (def least = firstLeastItem(nextItems); least; least = firstLeastItem(nextItems)) {
+            levels[target].addItem(least)
+            for (k in 0..(target-1)) {
+                if (nextItems[k]?.key == least.key) {
                     def itr = iterators[k]
-                    nextItems[k] = itr.hasNext() ? itr.next() : null
+                    nextItems[k] = itr?.hasNext() ? itr.next() : null
                 }
             }
         }

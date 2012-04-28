@@ -21,8 +21,8 @@ class Array {
     Array(int k) {
         assert k > 0
         this.k = k
-        elements = new Element[2^k]
-        maxItems = 2^(k-1)
+        elements = new Element[2**k]
+        maxItems = 2**(k-1)
     }
 
     void clear() {
@@ -148,6 +148,14 @@ class Array {
         }
         addElement(item)
         nItems++
+    }
+
+    void addOnlyItem(Item item) {
+        assert k == 1 && nItems == 0 && maxItems == 1
+        startMerge()
+        addItem(item)
+        finishMerge()
+        assert nItems == 1
     }
 
     private void moveNextLapFromRightToLeft() {

@@ -40,6 +40,10 @@ class Level {
         array.addItem(item)
     }
 
+    void addOnlyItem(Item item) {
+        array.addOnlyItem(item)
+    }
+
     Iterator<Item> getItemIterator() {
         array.itemIterator
     }

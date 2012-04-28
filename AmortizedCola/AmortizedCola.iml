@@ -25,6 +25,7 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="griffon-processing-plugin-0.5" level="application" />
+    <orderEntry type="library" name="griffon-spock-test-0.6" level="application" />
   </component>
 </module>
 

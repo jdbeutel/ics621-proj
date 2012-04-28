@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite errors="0" failures="0" hostname="pikake.getsu.com" name="amortizedcola.ArraySpec" tests="1" time="0.223" timestamp="2012-04-28T05:10:24">
+  <properties />
+  <testcase classname="amortizedcola.ArraySpec" name="level 1 array can hold 1 item" time="0.173" />
+  <system-out><![CDATA[--Output from level 1 array can hold 1 item--
+]]></system-out>
+  <system-err><![CDATA[--Output from level 1 array can hold 1 item--
+]]></system-err>
+</testsuite>

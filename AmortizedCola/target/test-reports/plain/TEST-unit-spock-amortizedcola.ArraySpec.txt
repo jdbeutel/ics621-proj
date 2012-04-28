@@ -1,0 +1,10 @@
+Testsuite: amortizedcola.ArraySpec
+Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.223 sec
+------------- Standard Output ---------------
+--Output from level 1 array can hold 1 item--
+------------- ---------------- ---------------
+------------- Standard Error -----------------
+--Output from level 1 array can hold 1 item--
+------------- ---------------- ---------------
+
+Testcase: level 1 array can hold 1 item took 0.173 sec
