@@ -4,6 +4,7 @@ class AmortizedColaController {
     // these will be injected by Griffon
     AmortizedColaModel model
     AmortizedColaView view
+    int key = 1
 
     // this method is called after model and view are injected
     void mvcGroupInit(Map args) {
@@ -24,4 +25,16 @@ class AmortizedColaController {
     def action = { evt = null ->
     }
     */
+
+//    def finishDraw = {
+//        app.event("DrawFinished")
+//    }
+//
+//    def onDrawFinished = { value ->
+//        doLater {
+//            model.pApplet.cola.insert(key, "value $key")
+//            key++
+//            model.pApplet.redraw()
+//        }
+//    }
 }

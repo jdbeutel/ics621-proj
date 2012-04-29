@@ -7,6 +7,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     AmortizedColaModel model
     AmortizedColaController controller
     Cola cola = new Cola()
+    int key = 1
     PFont font8, font10, font12, font14, font16
     def fonts
     def red = color(255, 0, 0)
@@ -22,9 +23,9 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         // That size seems to have no effect, though; the preferredSize in AmortizedColaView does.
         frameRate(30)
 
-        for (i in 100..149) {
-            cola.insert(i, 'foo')
-        }
+//        for (i in 100..149) {
+//            cola.insert(i, 'foo')
+//        }
         println PFont.list()
         font16 = createFont("Liberation Sans Narrow", 16)
         font14 = createFont("Liberation Sans Narrow", 14)
@@ -33,6 +34,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         font8 = createFont("Liberation Sans Narrow", 8)
 //        myFont = createFont("SansSerif", 10)
         fonts = [font16, font14, font12, font10, font8]
+        noLoop()
     }
 
     // The statements in draw() are executed until the 
@@ -80,6 +82,12 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
                 }
             }
         }
+        // controller.finishDraw()
+        cola.insert(key, "value ${key++}")
+    }
+
+    void keyTyped() {
+        redraw()
     }
 
     private cellCoordinate(int level, int index) {
