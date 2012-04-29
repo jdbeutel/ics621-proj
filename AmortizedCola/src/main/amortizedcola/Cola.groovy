@@ -89,4 +89,8 @@ class Cola {
         }
         addLevel()
     }
+
+    def getNItems() {
+        levels[1..nLevels].array.nItems
+    }
 }
