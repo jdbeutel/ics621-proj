@@ -2,8 +2,8 @@ package amortizedcola
 
 class AmortizedColaController {
     // these will be injected by Griffon
-    def model
-    def view
+    AmortizedColaModel model
+    AmortizedColaView view
 
     // this method is called after model and view are injected
     void mvcGroupInit(Map args) {
