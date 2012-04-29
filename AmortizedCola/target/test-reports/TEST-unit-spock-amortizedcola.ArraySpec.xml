@@ -1,9 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite errors="0" failures="0" hostname="pikake.getsu.com" name="amortizedcola.ArraySpec" tests="1" time="0.223" timestamp="2012-04-28T05:10:24">
+<testsuite errors="0" failures="0" hostname="pikake.getsu.com" name="amortizedcola.ArraySpec" tests="6" time="0.007" timestamp="2012-04-29T02:10:03">
   <properties />
-  <testcase classname="amortizedcola.ArraySpec" name="level 1 array can hold 1 item" time="0.173" />
+  <testcase classname="amortizedcola.ArraySpec" name="level 1 array can hold 1 item" time="0.001" />
+  <testcase classname="amortizedcola.ArraySpec" name="empty level can be searched" time="0.001" />
+  <testcase classname="amortizedcola.ArraySpec" name="items can be added without look-ahead pointers" time="0.001" />
+  <testcase classname="amortizedcola.ArraySpec" name="item merges before the look-ahead pointer" time="0.001" />
+  <testcase classname="amortizedcola.ArraySpec" name="item merges after the look-ahead pointer" time="0.0" />
+  <testcase classname="amortizedcola.ArraySpec" name="item merges equal to the look-ahead pointer" time="0.0" />
   <system-out><![CDATA[--Output from level 1 array can hold 1 item--
+--Output from empty level can be searched--
+--Output from items can be added without look-ahead pointers--
+--Output from item merges before the look-ahead pointer--
+--Output from item merges after the look-ahead pointer--
+--Output from item merges equal to the look-ahead pointer--
 ]]></system-out>
   <system-err><![CDATA[--Output from level 1 array can hold 1 item--
+--Output from empty level can be searched--
+--Output from items can be added without look-ahead pointers--
+--Output from item merges before the look-ahead pointer--
+--Output from item merges after the look-ahead pointer--
+--Output from item merges equal to the look-ahead pointer--
 ]]></system-err>
 </testsuite>
