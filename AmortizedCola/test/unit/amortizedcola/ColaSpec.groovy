@@ -104,27 +104,21 @@ class ColaSpec extends Specification {
         given:
         def cola = new Cola()
         def m = [:]
-        ranges.eachWithIndex { range, idx ->
-            for (i in range) {
-                m[i] = "value $i range $idx"
-            }
-        }
 
-        when:
+        expect:
         ranges.eachWithIndex { range, rangeIdx ->
             for (i in range) {
-                cola.insert(i, "value $i range $rangeIdx")
+                def key = i
+                def value = "value $key range $rangeIdx"
+                m[key] = value
+                cola.insert(key, value)
+                m.each {k, v ->
+                    assert cola.search(k) == v
+                }
+                assert cola.search(-1) == null
             }
             assert cola.NItems == expectedNItems[rangeIdx]
         }
-
-        then:
-        m.each {k, v ->
-            assert cola.search(k) == v
-        }
-
-        and: "a search for a nonexistant key"
-        cola.search(-1) == null
 
         where:
         N   | ranges                                | expectedNItems
