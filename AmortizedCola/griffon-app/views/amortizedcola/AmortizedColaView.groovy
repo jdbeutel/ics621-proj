@@ -1,7 +1,7 @@
 package amortizedcola
 
 application(title: 'AmortizedCola',
-  preferredSize: [320, 240],
+  preferredSize: [1024, 768],   // XGA in the hope that the projector is this size
   pack: true,
   //location: [50,50],
   locationByPlatform:true,

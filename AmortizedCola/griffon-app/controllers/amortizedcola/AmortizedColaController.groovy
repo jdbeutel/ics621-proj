@@ -8,6 +8,7 @@ class AmortizedColaController {
     // this method is called after model and view are injected
     void mvcGroupInit(Map args) {
         model.pApplet.model = model     // todo: redundant?
+        model.pApplet.controller = this // todo: redundant?
         // model.pApplet.init()         // todo: necessary?
     }
 
