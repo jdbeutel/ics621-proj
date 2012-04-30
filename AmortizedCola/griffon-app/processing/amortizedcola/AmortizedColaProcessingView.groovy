@@ -15,15 +15,19 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     def searchRand = new Random(6)
     def contents = [:]
 
-    PFont font4, font6, font8, font10, font12, font14, font16
+    PFont font4, font6, font8, font10, font12, font14, font16, myFont
     def fonts
     def red = color(255, 0, 0)
-    def green = color(0, 255, 0)
+//    def green = color(0, 255, 0)
+    def darkGreen = color(43, 117, 0)
     def blue = color(0, 0, 255)
+    def lightCyan = color(132, 238, 250)
+    def darkBlue = color(34, 25, 209)
 
+    final static HEADER = 30
     final static CELL_WIDTH = 28
     final static CELL_HEIGHT = 20
-    final static LEVEL_SPACING = 30
+    final static LEVEL_SPACING = 40
 
     // The statements in the setup() function 
     // execute once when the program begins
@@ -32,9 +36,6 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         // That size seems to have no effect, though; the preferredSize in AmortizedColaView does.
         frameRate(30)
 
-//        for (i in 100..149) {
-//            cola.insert(i, 'foo')
-//        }
         println PFont.list()
         font16 = createFont("Liberation Sans Narrow", 16)
         font14 = createFont("Liberation Sans Narrow", 14)
@@ -43,13 +44,32 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         font8 = createFont("Liberation Sans Narrow", 8)
         font6 = createFont("Liberation Sans Narrow", 6)
         font4 = createFont("Liberation Sans Narrow", 4)
-//        myFont = createFont("SansSerif", 10)
+        myFont = createFont("SansSerif", 18)
         fonts = [font16, font14, font12, font10, font8, font6, font4]
         noLoop()
     }
 
+    private drawLegend() {
+        def (x, y) = cellCoordinate(1, 1)
+        def (southWestX, southWestY) = cellCoordinate(4, 0)
+        fill(lightCyan)
+        stroke(darkBlue)
+        rect((int) southWestX-10, (int) y-10, (int) (x - southWestX) * 2 + 20, (int) southWestY - y + CELL_HEIGHT + 20)
+        textFont(myFont)
+        textAlign(RIGHT, TOP)
+        fill(darkBlue)
+        text("N = ${cola.getN()}" as String, (int) southWestX-20, (int) y)
+        text("seeks = ${cola.nSeeks}" as String, (int) southWestX-20, (int) y + 20)
+        text("inserts = ${cola.nInserts}" as String, (int) southWestX-20, (int) y + 40)
+        text("searches = ${cola.nSearches}" as String, (int) southWestX-20, (int) y + 60)
+        text("RAM" as String, (int) x + (x - southWestX) - 10, (int) y + 80)
+        textAlign(LEFT, TOP)
+        text("disk" as String, (int) x + (x - southWestX) + 30, (int) y + 110)
+    }
+
     synchronized void draw() {
         background(255)   // Set the background to white
+        drawLegend()
         for (level in 1..cola.nLevels) {
             cola.levels[level].array.elements.eachWithIndex {element, idx ->
                 drawElement(level, element, idx)
@@ -57,9 +77,9 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             if (cola.merging) {
                 stroke(blue)
                 fill(blue)
-                textFont(fonts[0])
-                textAlign(RIGHT, TOP)
-                text("inserting $insertKey" as String, (int) width/2 - CELL_WIDTH*3, LEVEL_SPACING)
+                textFont(myFont)
+                textAlign(CENTER, TOP)
+                text("inserting $insertKey" as String, (int) width/2, 5)
                 def a = cola.levels[level].array
                 if (level == cola.mergeTarget && a.nRight) {
                     assert a.lowerBoundInclusive
@@ -69,8 +89,8 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
                 }
             }
             if (cola.searching || searchResult) {
-                stroke(green)
-                fill(green)
+                stroke(darkGreen)
+                fill(darkGreen)
                 def a = cola.levels[level].array
                 if (level == cola.searchLevel) {
                     drawCursor(level, (int) a.mostRecentSearchIndex)
@@ -89,9 +109,9 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     }
 
     void drawSearchMsg(String msg) {
-        textFont(fonts[0])
-        textAlign(RIGHT, TOP)
-        text(msg, (int) width/2 - CELL_WIDTH*3, LEVEL_SPACING)
+        textFont(myFont)
+        textAlign(CENTER, TOP)
+        text(msg, (int) width/2, HEADER)
     }
 
     void drawCursor(int level, int index) {
@@ -250,7 +270,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         }
         int start = center - (int)(levelWidth/2)
         int x = start + index * cellWidth
-        int y = LEVEL_SPACING * level + CELL_HEIGHT * (level - 1)
+        int y = LEVEL_SPACING * level + CELL_HEIGHT * level + HEADER
         [x, y, cellWidth, font]
     }
 }

@@ -7,7 +7,7 @@ package amortizedcola
  */
 class Cola {
 
-    final static DISK_LEVEL = 4     // first level not in memory
+    final static DISK_LEVEL = 5     // first level not in memory
 
     int nLevels = 0
     List<Level> levels = []
@@ -142,6 +142,9 @@ class Cola {
             for (k in (mergeTarget-1)..1) {
                 levels[k].clear()
                 levels[k].addLaps(levels[k+1])
+                if (k >= DISK_LEVEL) {
+                    nSeeks++
+                }
             }
             merging = false
         }
