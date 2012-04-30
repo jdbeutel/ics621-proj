@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite errors="0" failures="0" hostname="pikake.getsu.com" name="amortizedcola.AmortizedColaTests" tests="1" time="0.05" timestamp="2012-04-29T02:10:08">
+<testsuite errors="0" failures="0" hostname="pikake.getsu.com" name="amortizedcola.AmortizedColaTests" tests="1" time="0.06" timestamp="2012-04-30T04:38:25">
   <properties />
-  <testcase classname="amortizedcola.AmortizedColaTests" name="testSomething" time="0.036" />
+  <testcase classname="amortizedcola.AmortizedColaTests" name="testSomething" time="0.044" />
   <system-out><![CDATA[--Output from testSomething--
 ]]></system-out>
   <system-err><![CDATA[--Output from testSomething--

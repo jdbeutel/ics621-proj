@@ -9,9 +9,11 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     Cola cola = new Cola()
     def rand = null
     def sequence = 1
+    def insertKey
     PFont font4, font6, font8, font10, font12, font14, font16
     def fonts
     def red = color(255, 0, 0)
+    def blue = color(0, 0, 255)
 
     final static CELL_WIDTH = 28
     final static CELL_HEIGHT = 20
@@ -40,62 +42,83 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         noLoop()
     }
 
-    // The statements in draw() are executed until the 
-    // program is stopped. Each statement is executed in 
-    // sequence and after the last line is read, the first 
-    // line is executed again.
-    void draw() {
+    synchronized void draw() {
         background(255)   // Set the background to white
         for (level in 1..cola.nLevels) {
             cola.levels[level].array.elements.eachWithIndex {element, idx ->
-                int x, y, cellWidth
-                PFont font
-                (x, y, cellWidth, font) = cellCoordinate(level, idx)
-                int centerX = x + (int)(cellWidth/2)
-                int centerY = y + (int)(CELL_HEIGHT/2)
-                fill(230)         // set rectangle filling color to light-grey
-                stroke(0)     // Set line drawing color to black
-                rect(x, y, cellWidth, CELL_HEIGHT)
-                if (element?.key) {
-                    if (element instanceof Item) {
-                        fill(0)         // set text filling color to black
-                    } else {
-                        assert element instanceof RealLap
-                        fill(red)    // set triangle and text filling color to red
-                        stroke(red)    // set line drawing color to red
-                        def (targetX, targetY, targetCellWidth) = cellCoordinate(level + 1, element.index)
-                        int targetCenterX = targetX + (int)(targetCellWidth/2)
-                        line(centerX, y + CELL_HEIGHT, targetCenterX, (int) targetY-6)
-                        triangle(targetCenterX, (int) targetY-1, targetCenterX-3, (int) targetY-5, targetCenterX+3, (int) targetY-5)
-                    }
-                    textFont(font)
-                    textAlign(CENTER, CENTER)
-                    translate(centerX, centerY)
-                    if (font == fonts[3] || font == fonts[4]) {
-                        rotate(radians(-90))     // vertical text, bottom to top
-                    }
-                    text("$element.key" as String, 0, 0)
-                    if (font == fonts[3] || font == fonts[4]) {
-                        rotate(radians(90))     // back to horizontal
-                    }
-                    translate(-centerX, -centerY)
-                } else if (element instanceof DupLap) {
-                    fill(0)         // set ellipse filling color to black
-                    int diameter = cellWidth < CELL_WIDTH/4 ? 3 : cellWidth < CELL_WIDTH/2 ? 4 : 6
-                    ellipse(centerX, centerY, diameter, diameter)
-                    stroke(0)   // set line drawing color to black
-                    int dupCrossY = (int)(y - LEVEL_SPACING/2)
-                    line(centerX, centerY, centerX, dupCrossY)
-                    if (element.left) {
-                        drawDupArrow(centerX, dupCrossY, level, element.left)
-                    }
-                    if (element.right) {
-                        drawDupArrow(centerX, dupCrossY, level, element.right)
-                    }
+                drawElement(level, element, idx)
+            }
+            if (cola.merging) {
+                stroke(blue)
+                fill(blue)
+                textFont(fonts[0])
+                textAlign(RIGHT, TOP)
+                text("inserting $insertKey" as String, (int) width/2 - CELL_WIDTH*3, LEVEL_SPACING)
+                def a = cola.levels[level].array
+                if (level == cola.mergeTarget && a.nRight) {
+                    assert a.lowerBoundInclusive
+                    drawMergeCursor(level, a.lowerBoundInclusive)
+                } else if (level < cola.mergeTarget && cola.nextItems[level]) {
+                    drawMergeCursor(level, (int) cola.iterators[level].mostRecent)
                 }
             }
         }
-        // controller.finishDraw()
+    }
+
+    void drawMergeCursor(int level, int index) {
+        int x, y, cellWidth
+        (x, y, cellWidth) = cellCoordinate(level, index)
+        int centerX = x + (int)(cellWidth/2)
+        int bottomY = y + CELL_HEIGHT
+        triangle(centerX, bottomY+1, centerX-2, bottomY+5, centerX+2, bottomY+5)
+    }
+
+    void drawElement(int level, Element element, int idx) {
+        int x, y, cellWidth
+        PFont font
+        (x, y, cellWidth, font) = cellCoordinate(level, idx)
+        int centerX = x + (int)(cellWidth/2)
+        int centerY = y + (int)(CELL_HEIGHT/2)
+        fill(230)         // set rectangle filling color to light-grey
+        stroke(0)     // Set line drawing color to black
+        rect(x, y, cellWidth, CELL_HEIGHT)
+        if (element?.key) {
+            if (element instanceof Item) {
+                fill(0)         // set text filling color to black
+            } else {
+                assert element instanceof RealLap
+                fill(red)    // set triangle and text filling color to red
+                stroke(red)    // set line drawing color to red
+                def (targetX, targetY, targetCellWidth) = cellCoordinate(level + 1, element.index)
+                int targetCenterX = targetX + (int)(targetCellWidth/2)
+                line(centerX, y + CELL_HEIGHT, targetCenterX, (int) targetY-6)
+                triangle(targetCenterX, (int) targetY-1, targetCenterX-3, (int) targetY-5, targetCenterX+3, (int) targetY-5)
+            }
+            textFont(font)
+            textAlign(CENTER, CENTER)
+            translate(centerX, centerY)
+            if (font == fonts[3] || font == fonts[4]) {
+                rotate(radians(-90))     // vertical text, bottom to top
+            }
+            text("$element.key" as String, 0, 0)
+            if (font == fonts[3] || font == fonts[4]) {
+                rotate(radians(90))     // back to horizontal
+            }
+            translate(-centerX, -centerY)
+        } else if (element instanceof DupLap) {
+            fill(0)         // set ellipse filling color to black
+            int diameter = cellWidth < CELL_WIDTH/4 ? 3 : cellWidth < CELL_WIDTH/2 ? 4 : 6
+            ellipse(centerX, centerY, diameter, diameter)
+            stroke(0)   // set line drawing color to black
+            int dupCrossY = (int)(y - LEVEL_SPACING/2)
+            line(centerX, centerY, centerX, dupCrossY)
+            if (element.left) {
+                drawDupArrow(centerX, dupCrossY, level, element.left)
+            }
+            if (element.right) {
+                drawDupArrow(centerX, dupCrossY, level, element.right)
+            }
+        }
     }
 
     private void drawDupArrow(int centerX, int dupCrossY, int level, int index) {
@@ -107,17 +130,22 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         triangle(targetSideX, (int) targetY-1, targetSideX-2, (int) targetY-4, targetSideX+2, (int) targetY-4)
     }
 
-    void keyTyped() {
-        if (key == 'R' || key == 'r') {
+    synchronized void keyTyped() {
+        if (key == 'R') {
             rand = new Random(42)
             cola = new Cola()
-        } else if (key == 'S' || key == 's') {
+        } else if (key == 'S') {
             sequence = 1
             rand = null
             cola = new Cola()
-        } else {
-            def insertKey = nextInsertKey
-            cola.insert(insertKey, "value $insertKey")
+        } else if (key == 'i') {
+            insertKey = nextInsertKey
+            cola.insert(insertKey, "value $insertKey", false)
+        } else if (key == 'I' && !cola.merging) {
+            insertKey = nextInsertKey
+            cola.insert(insertKey, "value $insertKey", true)
+        } else if (key == ' ' && cola.merging) {
+            cola.mergeStep()
         }
         redraw()
     }

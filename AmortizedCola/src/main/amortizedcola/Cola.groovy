@@ -10,21 +10,28 @@ class Cola {
     int nLevels = 0
     List<Level> levels = []
 
+    boolean merging = false
+    int mergeTarget
+    List<Iterator<Item>> iterators = []
+    List<Item> nextItems = []
+
     Cola() {
         levels[0] = null    // skipping to avoid fractional real Item
         addLevel()
     }
 
-    void insert(key, value) {
+    void insert(key, value, boolean stepping=false) {
+        assert !merging
         def item = new Item(key, value)
         if (levels[1].available) {
             levels[1].addOnlyItem(item)
         } else {
-            merge(item)
+            merge(item, stepping)
         }
     }
 
     def search(key) {
+        assert !merging
         def result = null
         int lower = 0
         for (k in 1..nLevels) {
@@ -42,33 +49,45 @@ class Cola {
         k
     }
 
-    private void merge(Item item) {
-        int target = nextAvailableLevel
-        assert target > 1
-        List<Iterator<Item>> iterators = []
-        List<Item> nextItems = []
+    private void merge(Item item, boolean stepping) {
+        assert !merging
+        merging = true
+        mergeTarget = nextAvailableLevel
+        assert mergeTarget > 1
         iterators[0] = null
         nextItems[0] = item
-        for (k in 1..(target-1)) {
+        for (k in 1..(mergeTarget-1)) {
             def itr = levels[k].itemIterator
             iterators[k] = itr
             nextItems[k] = itr.hasNext() ? itr.next() : null
         }
-        levels[target].startMerge()
-        for (def least = firstLeastItem(nextItems); least; least = firstLeastItem(nextItems)) {
-            levels[target].addItem(least)
-            for (k in 0..(target-1)) {
+        levels[mergeTarget].startMerge()
+        if (!stepping) {
+            //noinspection GroovyEmptyStatementBody
+            while(mergeStep()) {}
+        }
+    }
+
+    boolean mergeStep() {
+        assert merging
+        def least = firstLeastItem(nextItems)
+        if (least) {
+            levels[mergeTarget].addItem(least)
+            for (k in 0..(mergeTarget-1)) {
                 if (nextItems[k]?.key == least.key) {
                     def itr = iterators[k]
                     nextItems[k] = itr?.hasNext() ? itr.next() : null
                 }
             }
+        } else {
+            levels[mergeTarget].finishMerge()
+            for (k in (mergeTarget-1)..1) {
+                levels[k].clear()
+                levels[k].addLaps(levels[k+1])
+            }
+            merging = false
         }
-        levels[target].finishMerge()
-        for (k in (target-1)..1) {
-            levels[k].clear()
-            levels[k].addLaps(levels[k+1])
-        }
+        merging
     }
 
     private static Item firstLeastItem(nextItems) {

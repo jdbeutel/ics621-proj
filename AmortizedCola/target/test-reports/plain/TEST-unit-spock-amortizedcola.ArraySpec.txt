@@ -17,9 +17,9 @@ Tests run: 6, Failures: 0, Errors: 0, Time elapsed: 0.007 sec
 --Output from item merges equal to the look-ahead pointer--
 ------------- ---------------- ---------------
 
-Testcase: level 1 array can hold 1 item took 0.001 sec
-Testcase: empty level can be searched took 0.001 sec
+Testcase: level 1 array can hold 1 item took 0 sec
+Testcase: empty level can be searched took 0 sec
 Testcase: items can be added without look-ahead pointers took 0.001 sec
 Testcase: item merges before the look-ahead pointer took 0.001 sec
-Testcase: item merges after the look-ahead pointer took 0 sec
-Testcase: item merges equal to the look-ahead pointer took 0 sec
+Testcase: item merges after the look-ahead pointer took 0.001 sec
+Testcase: item merges equal to the look-ahead pointer took 0.001 sec

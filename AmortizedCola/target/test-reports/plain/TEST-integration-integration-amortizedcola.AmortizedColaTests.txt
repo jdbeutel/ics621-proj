@@ -1,5 +1,5 @@
 Testsuite: amortizedcola.AmortizedColaTests
-Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.05 sec
+Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.06 sec
 ------------- Standard Output ---------------
 --Output from testSomething--
 ------------- ---------------- ---------------
@@ -7,4 +7,4 @@ Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.05 sec
 --Output from testSomething--
 ------------- ---------------- ---------------
 
-Testcase: testSomething took 0.037 sec
+Testcase: testSomething took 0.044 sec

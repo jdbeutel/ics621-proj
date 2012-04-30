@@ -37,7 +37,7 @@ class Array {
         }
     }
 
-    private int getLowerBoundInclusive() {
+    int getLowerBoundInclusive() {
         nRight ? elements.size() - nRight : 0
     }
 
@@ -223,6 +223,7 @@ class Array {
         new Iterator() {
 
             int i = 0
+            int mostRecent = 0
 
             @Override
             boolean hasNext() {
@@ -237,6 +238,7 @@ class Array {
                 if (!hasNext()) {
                     throw new NoSuchElementException()
                 }
+                mostRecent = i
                 def x = elements[i++]
                 assert x instanceof Item
                 x
