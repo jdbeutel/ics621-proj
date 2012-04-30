@@ -7,6 +7,8 @@ package amortizedcola
  */
 class Cola {
 
+    final static DISK_LEVEL = 4     // first level not in memory
+
     int nLevels = 0
     List<Level> levels = []
 
@@ -15,13 +17,29 @@ class Cola {
     List<Iterator<Item>> iterators = []
     List<Item> nextItems = []
 
+    boolean searching = false
+    def searchKey
+    int searchLevel
+    boolean searchNextLevel = false
+    int searchLowerBound
+    def searchResult
+
+    int nInserts = 0
+    int nSearches = 0
+    int nSeeks = 0      // supposing 3 high-density disks with de-amortized COLA, and ignoring track changes
+
     Cola() {
         levels[0] = null    // skipping to avoid fractional real Item
         addLevel()
     }
 
-    void insert(key, value, boolean stepping=false) {
-        assert !merging
+    int getN() {
+        (int) levels.collect {it && it.array && !it.array.merging ? it.array.nItems : 0}.sum()
+    }
+
+    void insert(key, value, boolean stepping = false) {
+        assert !merging && !searching
+        nInserts++
         def item = new Item(key, value)
         if (levels[1].available) {
             levels[1].addOnlyItem(item)
@@ -30,17 +48,51 @@ class Cola {
         }
     }
 
-    def search(key) {
-        assert !merging
-        def result = null
-        int lower = 0
-        for (k in 1..nLevels) {
-            (result, lower) = levels[k].search(key, lower)
+    def search(key, boolean stepping = false) {
+        assert !merging && !searching
+        searching = true
+        nSearches++
+        searchKey = key
+        searchLevel = 1
+        searchLowerBound = 0
+        searchResult = null
+        //noinspection GroovyEmptyStatementBody
+        while (searchStep(stepping) && !stepping) {}
+        stepping ? searching : searchResult
+    }
+
+    boolean searchStep(boolean stepping = false) {
+        assert searching && !merging
+        def result
+        if (searchNextLevel) {
+            searchLevel++
+            searchNextLevel = false
+        }
+        if (searchLevel > nLevels) {
+            searchResult = null
+            searching = false
+        } else {
+            if (!levels[searchLevel].array.searching) {
+                result = levels[searchLevel].search(searchKey, searchLowerBound, stepping)
+                if (searchLevel >= DISK_LEVEL && levels[searchLevel].array.totalElements) {
+                    nSeeks++
+                }
+            } else {
+                result = levels[searchLevel].searchStep()
+            }
             if (result) {
-                break
+                assert !levels[searchLevel].array.searching
+                def (value, lower) = result
+                if (value != null) {
+                    searchResult = value
+                    searching = false
+                } else {
+                    searchNextLevel = true
+                    searchLowerBound = lower
+                }
             }
         }
-        result
+        searching
     }
 
     private int addLevel() {
@@ -50,7 +102,7 @@ class Cola {
     }
 
     private void merge(Item item, boolean stepping) {
-        assert !merging
+        assert !merging && !searching
         merging = true
         mergeTarget = nextAvailableLevel
         assert mergeTarget > 1
@@ -60,8 +112,14 @@ class Cola {
             def itr = levels[k].itemIterator
             iterators[k] = itr
             nextItems[k] = itr.hasNext() ? itr.next() : null
+            if (k >= DISK_LEVEL) {
+                nSeeks++
+            }
         }
         levels[mergeTarget].startMerge()
+        if (mergeTarget >= DISK_LEVEL) {
+            nSeeks++
+        }
         if (!stepping) {
             //noinspection GroovyEmptyStatementBody
             while(mergeStep()) {}
@@ -69,7 +127,7 @@ class Cola {
     }
 
     boolean mergeStep() {
-        assert merging
+        assert merging && !searching
         def least = firstLeastItem(nextItems)
         if (least) {
             levels[mergeTarget].addItem(least)

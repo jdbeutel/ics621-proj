@@ -20,8 +20,12 @@ class Level {
         array = new Array(k)
     }
 
-    def search(key, int lower) {
-        array.search(key, lower)
+    def search(key, int lower, boolean stepping = false) {
+        array.search(key, lower, stepping)
+    }
+
+    def searchStep() {
+        array.searchStep()
     }
 
     boolean getAvailable() {

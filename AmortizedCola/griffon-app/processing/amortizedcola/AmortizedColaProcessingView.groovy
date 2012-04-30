@@ -10,9 +10,15 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     def rand = null
     def sequence = 1
     def insertKey
+    def searchKey
+    String searchResult = null
+    def searchRand = new Random(6)
+    def contents = [:]
+
     PFont font4, font6, font8, font10, font12, font14, font16
     def fonts
     def red = color(255, 0, 0)
+    def green = color(0, 255, 0)
     def blue = color(0, 0, 255)
 
     final static CELL_WIDTH = 28
@@ -57,20 +63,43 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
                 def a = cola.levels[level].array
                 if (level == cola.mergeTarget && a.nRight) {
                     assert a.lowerBoundInclusive
-                    drawMergeCursor(level, a.lowerBoundInclusive)
+                    drawCursor(level, a.lowerBoundInclusive)
                 } else if (level < cola.mergeTarget && cola.nextItems[level]) {
-                    drawMergeCursor(level, (int) cola.iterators[level].mostRecent)
+                    drawCursor(level, (int) cola.iterators[level].mostRecent)
+                }
+            }
+            if (cola.searching || searchResult) {
+                stroke(green)
+                fill(green)
+                def a = cola.levels[level].array
+                if (level == cola.searchLevel) {
+                    drawCursor(level, (int) a.mostRecentSearchIndex)
                 }
             }
         }
+        if (cola.searching) {
+            String msg = "searching ${contents[searchKey] == null ? '(missing)' : ''} $searchKey"
+            drawSearchMsg(msg)
+        }
+        if (searchResult) {
+            String msg = "search completed: $searchResult"
+            drawSearchMsg(msg)
+            searchResult = null
+        }
     }
 
-    void drawMergeCursor(int level, int index) {
+    void drawSearchMsg(String msg) {
+        textFont(fonts[0])
+        textAlign(RIGHT, TOP)
+        text(msg, (int) width/2 - CELL_WIDTH*3, LEVEL_SPACING)
+    }
+
+    void drawCursor(int level, int index) {
         int x, y, cellWidth
         (x, y, cellWidth) = cellCoordinate(level, index)
         int centerX = x + (int)(cellWidth/2)
         int bottomY = y + CELL_HEIGHT
-        triangle(centerX, bottomY+1, centerX-2, bottomY+5, centerX+2, bottomY+5)
+        triangle(centerX, bottomY+1, centerX-5, bottomY+10, centerX+5, bottomY+10)
     }
 
     void drawElement(int level, Element element, int idx) {
@@ -130,24 +159,64 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         triangle(targetSideX, (int) targetY-1, targetSideX-2, (int) targetY-4, targetSideX+2, (int) targetY-4)
     }
 
+    private void reset() {
+        cola = new Cola()
+        contents = [:]
+        insertKey = null
+        searchKey = null
+        searchResult = null
+    }
+
     synchronized void keyTyped() {
         if (key == 'R') {
             rand = new Random(42)
-            cola = new Cola()
-        } else if (key == 'S') {
+            reset()
+        } else if (key == 'C') {
             sequence = 1
             rand = null
-            cola = new Cola()
-        } else if (key == 'i') {
+            reset()
+        } else if (key == 'i' && !cola.merging && !cola.searching) {
             insertKey = nextInsertKey
-            cola.insert(insertKey, "value $insertKey", false)
-        } else if (key == 'I' && !cola.merging) {
+            def value = "value $insertKey"
+            contents[insertKey] = value
+            cola.insert(insertKey, value, false)
+        } else if (key == 'I' && !cola.merging && !cola.searching) {
             insertKey = nextInsertKey
+            def value = "value $insertKey"
+            contents[insertKey] = value
             cola.insert(insertKey, "value $insertKey", true)
-        } else if (key == ' ' && cola.merging) {
-            cola.mergeStep()
+        } else if (key == 's' && !cola.searching && !cola.merging) {
+            searchKey = randomSearchKey()
+            publishSearchResult(cola.search(searchKey, false))
+        } else if (key == 'S' && !cola.searching && !cola.merging) {
+            searchKey = randomSearchKey()
+            if (!cola.search(searchKey, true)) {
+                publishSearchResult(cola.searchResult)
+            }
+        } else if (key == ' ') {
+            if (cola.merging) {
+                cola.mergeStep()
+            }
+            if (cola.searching) {
+                if (!cola.searchStep(true)) {
+                    publishSearchResult(cola.searchResult)
+                }
+            }
         }
         redraw()
+    }
+
+    private randomSearchKey() {
+        if (contents.size() && searchRand.nextInt(100) < 66) {
+            def keys = contents.keySet() as List
+            return keys[searchRand.nextInt(keys.size())]
+        } else {
+            return searchRand.nextInt(999)
+        }
+    }
+
+    private publishSearchResult(result) {
+        searchResult = result == null ? 'missing' : "found $result"
     }
 
     def getNextInsertKey() {

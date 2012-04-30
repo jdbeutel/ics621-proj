@@ -18,6 +18,10 @@ class Array {
     boolean merging = false
     int lastRealLapIdx = 0
 
+    boolean searching = false
+    int searchIndex, mostRecentSearchIndex, searchLowerBound
+    def searchKey
+
     Array(int k) {
         assert k > 0
         this.k = k
@@ -26,7 +30,7 @@ class Array {
     }
 
     void clear() {
-        assert !merging
+        assert !merging && !searching
         nItems = 0
         nRealLaps = 0
         nLeft = 0
@@ -45,8 +49,9 @@ class Array {
         nRight ? elements.size() : nLeft
     }
 
-    def search(key, int lower) {
-        assert !merging
+    def search(key, int lower, boolean stepping = false) {
+        assert !merging && !searching
+        searching = true
         assert key != null
         assert lowerBoundInclusive <= upperBoundExclusive
         if (lower < lowerBoundInclusive) {
@@ -54,27 +59,46 @@ class Array {
             lower = lowerBoundInclusive
         }
         assert lower <= upperBoundExclusive
-        int i = lower
+        searchIndex = searchLowerBound = lower
+        searchKey = key
+        def result = searchStep()
+        while (!stepping && !result) {
+            result = searchStep()
+        }
+        result
+    }
+
+    def searchStep() {
+        assert searching
+        def result
         // find target key or next greater (if any)
-        while (i < upperBoundExclusive) {
-            assert i - lower <= 8    // look-ahead pointers provide a lower within 8 elements of target or greater
-            def x = elements[i]
-            if (x.key == null || x.key < key) {
-                i++
-                continue
-            }
-            if (x.key == key) {
+        assert !(searchIndex > upperBoundExclusive)
+        mostRecentSearchIndex = searchIndex // display even if it's on the upper bound, one past the end of the array
+        if (searchIndex == upperBoundExclusive) {
+            result = [null, findLookaheadIndex(searchKey, searchIndex)]
+        } else {
+            assert searchIndex < upperBoundExclusive && searchIndex >= searchLowerBound
+            assert searchIndex - searchLowerBound <= 8    // look-ahead pointers provide a lower within 8 elements of target or greater
+            def x = elements[searchIndex]
+            if (x.key == null || x.key < searchKey) {
+                searchIndex++
+                result = null
+            } else if (x.key == searchKey) {
                 if (x instanceof RealLap) {
-                    return [null, x.index]
+                    result = [null, x.index]
                 } else {
                     assert x instanceof Item    // because all DupLap key are null
-                    return [x.value, 0]         // found; stop looking ahead
+                    result = [x.value, 0]         // found; stop looking ahead
                 }
+            } else {
+                assert x.key > searchKey
+                result = [null, findLookaheadIndex(searchKey, searchIndex)]
             }
-            assert x.key > key
-            break
         }
-        return [null, findLookaheadIndex(key, i)]
+        if (result) {
+            searching = false
+        }
+        result
     }
 
     // finds the next-lesser real look-ahead pointer of the element that is next greater-than the key
@@ -123,14 +147,14 @@ class Array {
         return r.index
     }
 
-    private int getTotalElements() {
+    int getTotalElements() {
         assert !merging
         assert !nLeft || !nRight
         nLeft ?: nRight
     }
 
     void addLaps(Array target) {
-        assert !merging && !target.merging
+        assert !merging && !target.merging && !searching && !target.searching
         assert !nItems && !nRealLaps && !totalElements
         assert k + 1 == target.k
         nRealLaps = Math.floor(target.totalElements / 8)
@@ -148,12 +172,12 @@ class Array {
     }
 
     void startMerge() {
-        assert !merging
+        assert !merging && !searching
         merging = true
     }
 
     void addItem(Item item) {
-        assert merging && nItems < maxItems
+        assert merging && nItems < maxItems && !searching
         // Merge any smaller look-ahead pointers, even if the key of the first one duplicates the last merged item,
         // to maintain the landing density in the target array for searches on greater keys.
         // I.e., don't merge them like items, where duplicate keys on larger levels are excluded.
@@ -173,7 +197,7 @@ class Array {
     }
 
     private void moveNextLapFromRightToLeft() {
-        assert merging && nRight
+        assert merging && nRight && !searching
         def r = elements[lowerBoundInclusive]
         assert r instanceof RealLap
         addElement(r)
@@ -202,7 +226,7 @@ class Array {
     }
 
     private void addElement(Element x) {
-        assert merging
+        assert merging && !searching
         if (nRealLaps && nLeft % 4 == 0) {  // need to add a duplicate look-ahead pointer here too
             def d = new DupLap(left: lastRealLapIdx, right: lastRealLapIdx)
             elements[nLeft++] = d
@@ -211,7 +235,7 @@ class Array {
     }
 
     void finishMerge() {
-        assert merging
+        assert merging && !searching
         while (nRight) {
             moveNextLapFromRightToLeft()
         }
