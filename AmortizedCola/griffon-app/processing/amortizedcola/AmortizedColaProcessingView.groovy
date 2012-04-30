@@ -7,14 +7,15 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     AmortizedColaModel model
     AmortizedColaController controller
     Cola cola = new Cola()
-    int key = 1
-    PFont font8, font10, font12, font14, font16
+    def rand = null
+    def sequence = 1
+    PFont font4, font6, font8, font10, font12, font14, font16
     def fonts
     def red = color(255, 0, 0)
 
     final static CELL_WIDTH = 28
     final static CELL_HEIGHT = 20
-    final static LEVEL_SPACING = 20
+    final static LEVEL_SPACING = 30
 
     // The statements in the setup() function 
     // execute once when the program begins
@@ -32,8 +33,10 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         font12 = createFont("Liberation Sans Narrow", 12)
         font10 = createFont("Liberation Sans Narrow", 10)
         font8 = createFont("Liberation Sans Narrow", 8)
+        font6 = createFont("Liberation Sans Narrow", 6)
+        font4 = createFont("Liberation Sans Narrow", 4)
 //        myFont = createFont("SansSerif", 10)
-        fonts = [font16, font14, font12, font10, font8]
+        fonts = [font16, font14, font12, font10, font8, font6, font4]
         noLoop()
     }
 
@@ -60,34 +63,71 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
                         assert element instanceof RealLap
                         fill(red)    // set triangle and text filling color to red
                         stroke(red)    // set line drawing color to red
-                        def (targetX, targetY, targetCellWidth, unused) = cellCoordinate(level + 1, element.index)
+                        def (targetX, targetY, targetCellWidth) = cellCoordinate(level + 1, element.index)
                         int targetCenterX = targetX + (int)(targetCellWidth/2)
-                        line(centerX, y + CELL_HEIGHT, targetCenterX, (int) targetY-4)
-                        triangle(targetCenterX, (int) targetY, targetCenterX-3, (int) targetY-4, targetCenterX+3, (int) targetY-4)
+                        line(centerX, y + CELL_HEIGHT, targetCenterX, (int) targetY-6)
+                        triangle(targetCenterX, (int) targetY-1, targetCenterX-3, (int) targetY-5, targetCenterX+3, (int) targetY-5)
                     }
                     textFont(font)
                     textAlign(CENTER, CENTER)
                     translate(centerX, centerY)
-                    if (font == fonts[3]) {
+                    if (font == fonts[3] || font == fonts[4]) {
                         rotate(radians(-90))     // vertical text, bottom to top
                     }
                     text("$element.key" as String, 0, 0)
-                    if (font == fonts[3]) {
+                    if (font == fonts[3] || font == fonts[4]) {
                         rotate(radians(90))     // back to horizontal
                     }
                     translate(-centerX, -centerY)
                 } else if (element instanceof DupLap) {
                     fill(0)         // set ellipse filling color to black
-                    ellipse(centerX, centerY, 6, 6)
+                    int diameter = cellWidth < CELL_WIDTH/4 ? 3 : cellWidth < CELL_WIDTH/2 ? 4 : 6
+                    ellipse(centerX, centerY, diameter, diameter)
+                    stroke(0)   // set line drawing color to black
+                    int dupCrossY = (int)(y - LEVEL_SPACING/2)
+                    line(centerX, centerY, centerX, dupCrossY)
+                    if (element.left) {
+                        drawDupArrow(centerX, dupCrossY, level, element.left)
+                    }
+                    if (element.right) {
+                        drawDupArrow(centerX, dupCrossY, level, element.right)
+                    }
                 }
             }
         }
         // controller.finishDraw()
-        cola.insert(key, "value ${key++}")
+    }
+
+    private void drawDupArrow(int centerX, int dupCrossY, int level, int index) {
+        def (targetX, targetY, targetCellWidth) = cellCoordinate(level, index)
+        int halfCellWidth = (int)(targetCellWidth/2)
+        int targetSideX = targetX + halfCellWidth + 3 * Integer.signum((int) centerX - targetX)
+        line(centerX, dupCrossY, targetSideX, dupCrossY)
+        line(targetSideX, dupCrossY, targetSideX, (int) targetY)
+        triangle(targetSideX, (int) targetY-1, targetSideX-2, (int) targetY-4, targetSideX+2, (int) targetY-4)
     }
 
     void keyTyped() {
+        if (key == 'R' || key == 'r') {
+            rand = new Random(42)
+            cola = new Cola()
+        } else if (key == 'S' || key == 's') {
+            sequence = 1
+            rand = null
+            cola = new Cola()
+        } else {
+            def insertKey = nextInsertKey
+            cola.insert(insertKey, "value $insertKey")
+        }
         redraw()
+    }
+
+    def getNextInsertKey() {
+        if (rand) {
+            rand.nextInt(999)
+        } else {
+            sequence++
+        }
     }
 
     private cellCoordinate(int level, int index) {
@@ -96,13 +136,19 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         int nCells = 2**level
         int cellWidth = CELL_WIDTH
         int levelWidth = cellWidth * nCells
-        if (levelWidth > width) {
-            cellWidth = (int)(cellWidth / 3) + 1
-            font = fonts[3]
-            levelWidth = cellWidth * nCells
-        } else if (levelWidth > width/2) {
+        if (levelWidth > width/2) {
             cellWidth = (int)(cellWidth * 2 / 3)
             font = fonts[2]
+            levelWidth = cellWidth * nCells
+        }
+        if (levelWidth > width) {
+            cellWidth = (int)(cellWidth / 2) + 1
+            font = fonts[3]
+            levelWidth = cellWidth * nCells
+        }
+        if (levelWidth > width) {
+            cellWidth = (int)(cellWidth / 2) + 1
+            font = fonts[4]
             levelWidth = cellWidth * nCells
         }
         int start = center - (int)(levelWidth/2)
