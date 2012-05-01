@@ -4,6 +4,11 @@ import griffon.plugins.processing.artifact.AbstractGriffonProcessingView
 import processing.core.PFont
 
 class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
+
+    // private static final String FONT_NAME = "Liberation Sans Narrow"     // Linux
+    private static final String FONT_NAME = "ArialNarrow"     // Mac
+    // private static final String FONT_NAME = "PTSans-Narrow"     // Mac
+
     AmortizedColaModel model
     AmortizedColaController controller
     Cola cola = new Cola()
@@ -37,13 +42,13 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         frameRate(30)
 
         println PFont.list()
-        font16 = createFont("Liberation Sans Narrow", 16)
-        font14 = createFont("Liberation Sans Narrow", 14)
-        font12 = createFont("Liberation Sans Narrow", 12)
-        font10 = createFont("Liberation Sans Narrow", 10)
-        font8 = createFont("Liberation Sans Narrow", 8)
-        font6 = createFont("Liberation Sans Narrow", 6)
-        font4 = createFont("Liberation Sans Narrow", 4)
+        font16 = createFont(FONT_NAME, 16)
+        font14 = createFont(FONT_NAME, 14)
+        font12 = createFont(FONT_NAME, 12)
+        font10 = createFont(FONT_NAME, 10)
+        font8 = createFont(FONT_NAME, 8)
+        font6 = createFont(FONT_NAME, 6)
+        font4 = createFont(FONT_NAME, 4)
         myFont = createFont("SansSerif", 18)
         fonts = [font16, font14, font12, font10, font8, font6, font4]
         noLoop()
@@ -185,6 +190,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         insertKey = null
         searchKey = null
         searchResult = null
+        searchRand = new Random(6)
     }
 
     synchronized void keyTyped() {
