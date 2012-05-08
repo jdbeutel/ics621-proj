@@ -22,6 +22,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     Cola cola = new Cola()
     def rand = null
     def sequence = 1
+    def sequenceStep = 1
     def insertKey
     def searchKey
     String searchResult = null
@@ -288,6 +289,12 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             reset()
         } else if (key == 'C') {
             sequence = 1
+            sequenceStep = 1
+            rand = null
+            reset()
+        } else if (key == 'V') {
+            sequence = 999
+            sequenceStep = -1
             rand = null
             reset()
         } else if (key == 'i' && !cola.merging && !cola.searching) {
@@ -345,11 +352,14 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     }
 
     def getNextInsertKey() {
+        int result
         if (rand) {
-            rand.nextInt(999)
+            result = rand.nextInt(999)
         } else {
-            sequence++
+            result = sequence
+            sequence += sequenceStep
         }
+        result
     }
 
     private cellCoordinate(int level, int index) {
