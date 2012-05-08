@@ -2,11 +2,21 @@ package amortizedcola
 
 import griffon.plugins.processing.artifact.AbstractGriffonProcessingView
 import processing.core.PFont
+import btree.InstrumentedMemoryPageStorage
+import com.sun.electric.database.geometry.btree.CachingPageStorage
+import com.sun.electric.database.geometry.btree.CachingPageStorageWrapper
+import com.sun.electric.database.geometry.btree.unboxed.Pair
+import com.sun.electric.database.geometry.btree.BTree
+import com.sun.electric.database.geometry.btree.unboxed.UnboxedInt
+import btree.FatUnboxedInt
+import com.sun.electric.database.geometry.btree.LeafNodeCursor
+import com.sun.electric.database.geometry.btree.NodeCursor
+import com.sun.electric.database.geometry.btree.InteriorNodeCursor
 
 class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
 
-    // private static final String FONT_NAME = "Liberation Sans Narrow"     // Linux
-    private static final String FONT_NAME = "ArialNarrow"     // Mac
+    private static final String FONT_NAME = "Liberation Sans Narrow"     // Linux
+    // private static final String FONT_NAME = "ArialNarrow"     // Mac
     // private static final String FONT_NAME = "PTSans-Narrow"     // Mac
 
     AmortizedColaModel model
@@ -20,6 +30,14 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     def searchRand = new Random(6)
     def contents = [:]
 
+    static final MAX_CACHE_PAGES = 8
+
+    InstrumentedMemoryPageStorage imps = new InstrumentedMemoryPageStorage()
+    CachingPageStorage ps = new CachingPageStorageWrapper(imps, MAX_CACHE_PAGES, false)
+    BTree<Integer, Integer, Pair<Integer, Integer>> btree =
+        new BTree<Integer,Integer,Pair<Integer,Integer>>(ps, UnboxedInt.instance, FatUnboxedInt.instance, null, null)
+    int btreeDegree = new InteriorNodeCursor(btree).INTERIOR_MAX_BUCKETS
+
     PFont font4, font6, font8, font10, font12, font14, font16, myFont
     def fonts
     def red = color(255, 0, 0)
@@ -29,10 +47,10 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     def lightCyan = color(132, 238, 250)
     def darkBlue = color(34, 25, 209)
 
-    final static HEADER = 30
+    final static HEADER = 10
     final static CELL_WIDTH = 28
     final static CELL_HEIGHT = 20
-    final static LEVEL_SPACING = 40
+    final static LEVEL_SPACING = 20
 
     // The statements in the setup() function 
     // execute once when the program begins
@@ -59,14 +77,15 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         def (southWestX, southWestY) = cellCoordinate(4, 0)
         fill(lightCyan)
         stroke(darkBlue)
-        rect((int) southWestX-10, (int) y-10, (int) (x - southWestX) * 2 + 20, (int) southWestY - y + CELL_HEIGHT + 20)
+        rect((int) southWestX-7, (int) y-10, (int) (x - southWestX) * 2 + 20, (int) southWestY - y + CELL_HEIGHT + 14)
         textFont(myFont)
         textAlign(RIGHT, TOP)
         fill(darkBlue)
-        text("N = ${cola.getN()}" as String, (int) southWestX-20, (int) y)
-        text("seeks = ${cola.nSeeks}" as String, (int) southWestX-20, (int) y + 20)
-        text("inserts = ${cola.nInserts}" as String, (int) southWestX-20, (int) y + 40)
-        text("searches = ${cola.nSearches}" as String, (int) southWestX-20, (int) y + 60)
+        text("Amortized Cola (k-way)" as String, (int) southWestX-20, (int) y)
+        text("N = ${cola.getN()}" as String, (int) southWestX-20, (int) y + 20)
+        text("deamortized seeks = ${cola.nSeeks}" as String, (int) southWestX-20, (int) y + 40)
+        text("inserts = ${cola.nInserts}" as String, (int) southWestX-20, (int) y + 60)
+        text("searches = ${cola.nSearches}" as String, (int) southWestX-20, (int) y + 80)
         text("RAM" as String, (int) x + (x - southWestX) - 10, (int) y + 80)
         textAlign(LEFT, TOP)
         text("disk" as String, (int) x + (x - southWestX) + 30, (int) y + 110)
@@ -111,6 +130,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             drawSearchMsg(msg)
             searchResult = null
         }
+        drawBTree()
     }
 
     void drawSearchMsg(String msg) {
@@ -141,12 +161,8 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
                 fill(0)         // set text filling color to black
             } else {
                 assert element instanceof RealLap
-                fill(red)    // set triangle and text filling color to red
-                stroke(red)    // set line drawing color to red
                 def (targetX, targetY, targetCellWidth) = cellCoordinate(level + 1, element.index)
-                int targetCenterX = targetX + (int)(targetCellWidth/2)
-                line(centerX, y + CELL_HEIGHT, targetCenterX, (int) targetY-6)
-                triangle(targetCenterX, (int) targetY-1, targetCenterX-3, (int) targetY-5, targetCenterX+3, (int) targetY-5)
+                drawLookAheadArrow(centerX, y, targetX, targetY, targetCellWidth)
             }
             textFont(font)
             textAlign(CENTER, CENTER)
@@ -164,7 +180,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             int diameter = cellWidth < CELL_WIDTH/4 ? 3 : cellWidth < CELL_WIDTH/2 ? 4 : 6
             ellipse(centerX, centerY, diameter, diameter)
             stroke(0)   // set line drawing color to black
-            int dupCrossY = (int)(y - LEVEL_SPACING/2)
+            int dupCrossY = (int)(y - LEVEL_SPACING/2 + 2)
             line(centerX, centerY, centerX, dupCrossY)
             if (element.left) {
                 drawDupArrow(centerX, dupCrossY, level, element.left)
@@ -175,6 +191,14 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         }
     }
 
+    private void drawLookAheadArrow(centerX, y, targetX, targetY, targetCellWidth) {
+        fill(red)    // set triangle and text filling color to red
+        stroke(red)    // set line drawing color to red
+        int targetCenterX = targetX + (int)(targetCellWidth/2)
+        line((int) centerX, (int) y + CELL_HEIGHT, targetCenterX, (int) targetY-6)
+        triangle(targetCenterX, (int) targetY-1, targetCenterX-3, (int) targetY-5, targetCenterX+3, (int) targetY-5)
+    }
+
     private void drawDupArrow(int centerX, int dupCrossY, int level, int index) {
         def (targetX, targetY, targetCellWidth) = cellCoordinate(level, index)
         int halfCellWidth = (int)(targetCellWidth/2)
@@ -183,6 +207,78 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         line(targetSideX, dupCrossY, targetSideX, (int) targetY)
         triangle(targetSideX, (int) targetY-1, targetSideX-2, (int) targetY-4, targetSideX+2, (int) targetY-4)
     }
+
+    private void drawBTree() {
+        drawBTreePage([], btree.rootpage, 'X')
+    }
+
+    private void drawBTreePage(List<Integer> path, int pageid, parentKey) {
+        CachingPageStorage.CachedPage cp = ps.getPage(pageid, true)
+
+        // def cur = LeafNodeCursor.isLeafNode(cp) ? new LeafNodeCursor(btree) : new InteriorNodeCursor(btree);
+        def isLeafNode = UnboxedInt.instance.deserializeInt(cp.getBuf(), 1* 4/*SIZEOF_INT*/)==0
+        // def cur = isLeafNode ? new LeafNodeCursor(btree) : new InteriorNodeCursor(btree)
+        def cur
+        if (isLeafNode) {
+            cur = new LeafNodeCursor(btree)
+        } else {
+            cur = new InteriorNodeCursor(btree)
+        }
+        // def cur = new LeafNodeCursor(btree)
+
+        cur.setBuf(cp);
+        for (int i = 0; i < cur.numBuckets; i++) {
+            def key
+            if (cur.leafNode || i) {
+                def keyBuf = new byte[btree.uk.size]
+                cur.getKey(i, keyBuf, 0)
+                key = btree.uk.deserialize(keyBuf, 0)
+            } else {
+                // interior node has no key in its first bucket
+                assert !cur.leafNode && i == 0
+                key = parentKey
+            }
+            drawBTreeElement(path + i, key, cur.leafNode)
+            if (!cur.leafNode) {
+                // assert cur instanceof InteriorNodeCursor
+                drawBTreePage(path + i, cur.getBucketPageId(i), key)
+            }
+        }
+    }
+
+    void drawBTreeElement(List<Integer> path, key, boolean leaf) {
+        int x, y, cellWidth
+        PFont font
+        (x, y, cellWidth, font) = btreeCellCoordinate(path)
+        int centerX = x + (int)(cellWidth/2)
+        int centerY = y + (int)(CELL_HEIGHT/2)
+        fill(230)         // set rectangle filling color to light-grey
+        stroke(0)     // Set line drawing color to black
+        rect(x, y, cellWidth, CELL_HEIGHT)
+        if (leaf) {
+            fill(0)      // set text filling color to black
+        } else {
+            fill(red)    // set text filling color to red
+            stroke(red)  // Set line drawing color to red
+        }
+        textFont(font)
+        textAlign(CENTER, CENTER)
+        translate(centerX, centerY)
+        if (font == fonts[3] || font == fonts[4]) {
+            rotate(radians(-90))     // vertical text, bottom to top
+        }
+        text("$key" as String, 0, 0)
+        if (font == fonts[3] || font == fonts[4]) {
+            rotate(radians(90))     // back to horizontal
+        }
+        translate(-centerX, -centerY)
+        if (!leaf) {
+            stroke(red)  // Set line drawing color to red
+            def (childX, childY, childCellWidth) = btreeCellCoordinate(path + 0)
+            drawLookAheadArrow(centerX, y, childX, childY, childCellWidth)
+        }
+    }
+
 
     private void reset() {
         cola = new Cola()
@@ -206,6 +302,11 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             def value = "value $insertKey"
             contents[insertKey] = value
             cola.insert(insertKey, value, false)
+            if (btree.getValFromKey(insertKey)!=null) {
+                btree.replace(insertKey, insertKey);
+            } else {
+                btree.insert(insertKey, insertKey);
+            }
         } else if (key == 'I' && !cola.merging && !cola.searching) {
             insertKey = nextInsertKey
             def value = "value $insertKey"
@@ -254,29 +355,52 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     }
 
     private cellCoordinate(int level, int index) {
-        PFont font = fonts[0]
-        int center = (int)(width/2)
         int nCells = 2**level
+        def (x, cellWidth, font) = cellX(0, width, nCells, index)
+        int y = LEVEL_SPACING * level + CELL_HEIGHT * level + HEADER
+        [x, y, cellWidth, font]
+    }
+
+    private cellX(int left, int right, int nCells, int index) {
+        PFont font = fonts[0]
+        int center = (int)((left + right)/2)
         int cellWidth = CELL_WIDTH
         int levelWidth = cellWidth * nCells
-        if (levelWidth > width/2) {
+        int availableWidth = right - left
+        if (levelWidth > availableWidth/2) {
             cellWidth = (int)(cellWidth * 2 / 3)
             font = fonts[2]
             levelWidth = cellWidth * nCells
         }
-        if (levelWidth > width) {
+        if (levelWidth > availableWidth) {
             cellWidth = (int)(cellWidth / 2) + 1
             font = fonts[3]
             levelWidth = cellWidth * nCells
         }
-        if (levelWidth > width) {
+        if (levelWidth > availableWidth) {
             cellWidth = (int)(cellWidth / 2) + 1
             font = fonts[4]
             levelWidth = cellWidth * nCells
         }
         int start = center - (int)(levelWidth/2)
         int x = start + index * cellWidth
-        int y = LEVEL_SPACING * level + CELL_HEIGHT * level + HEADER
+        [x, cellWidth, font]
+    }
+
+    private btreeCellCoordinate(List<Integer> path) {
+        int left = 0
+        int right = width
+        int y = (int) (height / 2) + HEADER
+        while (path.size() > 1) {
+            int idx = path[0]
+            assert idx < btreeDegree
+            path = path.tail()
+            int availableWidth = (int)((right - left)/(btreeDegree-1))
+            left += idx * availableWidth
+            right = left + availableWidth
+            y += CELL_HEIGHT + LEVEL_SPACING
+        }
+        def (x, cellWidth, font) = cellX(left, right, btreeDegree, path[0])
         [x, y, cellWidth, font]
     }
 }

@@ -12,6 +12,6 @@ import com.sun.electric.database.geometry.btree.MemoryPageStorage
 class InstrumentedMemoryPageStorage extends MemoryPageStorage {
 
     InstrumentedMemoryPageStorage() {
-        super(60)
+        super(60)       // 36 for 2 (breaks BTree), 48 for 3, 60 for 4 w/ FatUnboxedInt value
     }
 }
