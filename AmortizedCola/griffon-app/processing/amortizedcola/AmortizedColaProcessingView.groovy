@@ -2,16 +2,14 @@ package amortizedcola
 
 import griffon.plugins.processing.artifact.AbstractGriffonProcessingView
 import processing.core.PFont
-import btree.InstrumentedMemoryPageStorage
 import com.sun.electric.database.geometry.btree.CachingPageStorage
-import com.sun.electric.database.geometry.btree.CachingPageStorageWrapper
 import com.sun.electric.database.geometry.btree.unboxed.Pair
 import com.sun.electric.database.geometry.btree.BTree
 import com.sun.electric.database.geometry.btree.unboxed.UnboxedInt
 import btree.FatUnboxedInt
 import com.sun.electric.database.geometry.btree.LeafNodeCursor
-import com.sun.electric.database.geometry.btree.NodeCursor
 import com.sun.electric.database.geometry.btree.InteriorNodeCursor
+import btree.EasyBTree
 
 class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
 
@@ -30,13 +28,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     def searchRand = new Random(6)
     def contents = [:]
 
-    static final MAX_CACHE_PAGES = 8
-
-    InstrumentedMemoryPageStorage imps = new InstrumentedMemoryPageStorage()
-    CachingPageStorage ps = new CachingPageStorageWrapper(imps, MAX_CACHE_PAGES, false)
-    BTree<Integer, Integer, Pair<Integer, Integer>> btree =
-        new BTree<Integer,Integer,Pair<Integer,Integer>>(ps, UnboxedInt.instance, FatUnboxedInt.instance, null, null)
-    int btreeDegree = new InteriorNodeCursor(btree).INTERIOR_MAX_BUCKETS
+    def ezbtree = new EasyBTree()
 
     PFont font4, font6, font8, font10, font12, font14, font16, myFont
     def fonts
@@ -209,30 +201,30 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     }
 
     private void drawBTree() {
-        drawBTreePage([], btree.rootpage, 'X')
+        drawBTreePage([], ezbtree.btree.rootpage, 'X')
     }
 
     private void drawBTreePage(List<Integer> path, int pageid, parentKey) {
-        CachingPageStorage.CachedPage cp = ps.getPage(pageid, true)
+        CachingPageStorage.CachedPage cp = ezbtree.ps.getPage(pageid, true)
 
-        // def cur = LeafNodeCursor.isLeafNode(cp) ? new LeafNodeCursor(btree) : new InteriorNodeCursor(btree);
+        // def cur = LeafNodeCursor.isLeafNode(cp) ? new LeafNodeCursor(ezbtree.btree) : new InteriorNodeCursor(ezbtree.btree);
         def isLeafNode = UnboxedInt.instance.deserializeInt(cp.getBuf(), 1* 4/*SIZEOF_INT*/)==0
-        // def cur = isLeafNode ? new LeafNodeCursor(btree) : new InteriorNodeCursor(btree)
+        // def cur = isLeafNode ? new LeafNodeCursor(ezbtree.btree) : new InteriorNodeCursor(ezbtree.btree)
         def cur
         if (isLeafNode) {
-            cur = new LeafNodeCursor(btree)
+            cur = new LeafNodeCursor(ezbtree.btree)
         } else {
-            cur = new InteriorNodeCursor(btree)
+            cur = new InteriorNodeCursor(ezbtree.btree)
         }
-        // def cur = new LeafNodeCursor(btree)
+        // def cur = new LeafNodeCursor(ezbtree.btree)
 
         cur.setBuf(cp);
         for (int i = 0; i < cur.numBuckets; i++) {
             def key
             if (cur.leafNode || i) {
-                def keyBuf = new byte[btree.uk.size]
+                def keyBuf = new byte[ezbtree.btree.uk.size]
                 cur.getKey(i, keyBuf, 0)
-                key = btree.uk.deserialize(keyBuf, 0)
+                key = ezbtree.btree.uk.deserialize(keyBuf, 0)
             } else {
                 // interior node has no key in its first bucket
                 assert !cur.leafNode && i == 0
@@ -282,6 +274,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
 
     private void reset() {
         cola = new Cola()
+        ezbtree = new EasyBTree()
         contents = [:]
         insertKey = null
         searchKey = null
@@ -302,16 +295,13 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             def value = "value $insertKey"
             contents[insertKey] = value
             cola.insert(insertKey, value, false)
-            if (btree.getValFromKey(insertKey)!=null) {
-                btree.replace(insertKey, insertKey);
-            } else {
-                btree.insert(insertKey, insertKey);
-            }
+            insertBTree(insertKey)
         } else if (key == 'I' && !cola.merging && !cola.searching) {
             insertKey = nextInsertKey
             def value = "value $insertKey"
             contents[insertKey] = value
             cola.insert(insertKey, "value $insertKey", true)
+            insertBTree(insertKey)
         } else if (key == 's' && !cola.searching && !cola.merging) {
             searchKey = randomSearchKey()
             publishSearchResult(cola.search(searchKey, false))
@@ -331,6 +321,14 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             }
         }
         redraw()
+    }
+
+    private void insertBTree(int key) {
+        if (ezbtree.btree.getValFromKey(key)!=null) {
+            ezbtree.btree.replace(key, key)
+        } else {
+            ezbtree.btree.insert(key, key)
+        }
     }
 
     private randomSearchKey() {
@@ -393,14 +391,14 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         int y = (int) (height / 2) + HEADER
         while (path.size() > 1) {
             int idx = path[0]
-            assert idx < btreeDegree
+            assert idx < ezbtree.btreeDegree
             path = path.tail()
-            int availableWidth = (int)((right - left)/(btreeDegree-1))
+            int availableWidth = (int)((right - left)/(ezbtree.btreeDegree-1))
             left += idx * availableWidth
             right = left + availableWidth
             y += CELL_HEIGHT + LEVEL_SPACING
         }
-        def (x, cellWidth, font) = cellX(left, right, btreeDegree, path[0])
+        def (x, cellWidth, font) = cellX(left, right, ezbtree.btreeDegree, path[0])
         [x, y, cellWidth, font]
     }
 }

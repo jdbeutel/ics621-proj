@@ -11,12 +11,16 @@ import com.sun.electric.database.geometry.btree.unboxed.UnboxedInt
  */
 class FatUnboxedInt extends UnboxedInt {
 
-    static final UnboxedInt instance = new FatUnboxedInt()
+    final int claimedSize
+
+    FatUnboxedInt(int size) {
+        claimedSize = size
+    }
 
     // just says that it needs more space than it does, so both interior and leaf nodes can have 4 buckets
     @Override
     int getSize() {
-        assert super.getSize() == 4
-        return 6
+        assert super.getSize() == 4 && claimedSize >= super.getSize()
+        return claimedSize
     }
 }
