@@ -254,6 +254,9 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
                 return lightOrange
             case statBtree.imps.sequentialReads:
                 return lightMoss
+            case statBtree.ps.cacheReadPages:
+            case statBtree.ps.cacheWritePages:
+                return lightCyan
             default:
                 return lightGrey
         }

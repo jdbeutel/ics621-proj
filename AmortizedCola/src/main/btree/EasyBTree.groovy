@@ -21,7 +21,7 @@ class EasyBTree {
     // 36 for 2 (breaks BTree), 48 for 3, or w/ FatUnboxedInt(6) value, 60 for 4 or 72 for 5
     InstrumentedMemoryPageStorage imps = new InstrumentedMemoryPageStorage(72)
 
-    CachingPageStorage ps = new CachingPageStorageWrapper(imps, MAX_CACHE_PAGES, false)
+    def ps = new InstrumentedCachingPageStorageWrapper(imps, MAX_CACHE_PAGES, false)
     BTree<Integer, Integer, Pair<Integer, Integer>> btree =
         new BTree<Integer,Integer,Pair<Integer,Integer>>(ps, UnboxedInt.instance, new FatUnboxedInt(6), null, null)
     int btreeDegree = new InteriorNodeCursor(btree).INTERIOR_MAX_BUCKETS
