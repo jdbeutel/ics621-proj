@@ -3,10 +3,9 @@ package amortizedcola
 import griffon.plugins.processing.artifact.AbstractGriffonProcessingView
 import processing.core.PFont
 import com.sun.electric.database.geometry.btree.CachingPageStorage
-import com.sun.electric.database.geometry.btree.unboxed.Pair
-import com.sun.electric.database.geometry.btree.BTree
+
 import com.sun.electric.database.geometry.btree.unboxed.UnboxedInt
-import btree.FatUnboxedInt
+
 import com.sun.electric.database.geometry.btree.LeafNodeCursor
 import com.sun.electric.database.geometry.btree.InteriorNodeCursor
 import btree.EasyBTree
@@ -29,7 +28,8 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     def searchRand = new Random(6)
     def contents = [:]
 
-    def ezbtree = new EasyBTree()
+    def viewBtree = new EasyBTree()     // observation changes the stats
+    def statBtree = new EasyBTree()     // isolated parallel for stats
 
     PFont font4, font6, font8, font10, font12, font14, font16, myFont
     def fonts
@@ -39,6 +39,11 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     def blue = color(0, 0, 255)
     def lightCyan = color(132, 238, 250)
     def darkBlue = color(34, 25, 209)
+    def lightOrange = color(252, 217, 141)
+    def darkOrange = color(252, 187, 45)
+    def lightMoss = color(207, 255, 145)
+    def darkMoss = color(153, 252, 23)
+    def lightGrey = 230
 
     final static HEADER = 10
     final static CELL_WIDTH = 28
@@ -202,36 +207,36 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     }
 
     private void drawBTree() {
-        drawBTreePage([], ezbtree.btree.rootpage, 'X')
+        drawBTreePage([], viewBtree.btree.rootpage, 'X')
     }
 
     private void drawBTreePage(List<Integer> path, int pageid, parentKey) {
-        CachingPageStorage.CachedPage cp = ezbtree.ps.getPage(pageid, true)
+        CachingPageStorage.CachedPage cp = viewBtree.ps.getPage(pageid, true)
 
-        // def cur = LeafNodeCursor.isLeafNode(cp) ? new LeafNodeCursor(ezbtree.btree) : new InteriorNodeCursor(ezbtree.btree);
+        // def cur = LeafNodeCursor.isLeafNode(cp) ? new LeafNodeCursor(viewBtree.btree) : new InteriorNodeCursor(viewBtree.btree);
         def isLeafNode = UnboxedInt.instance.deserializeInt(cp.getBuf(), 1* 4/*SIZEOF_INT*/)==0
-        // def cur = isLeafNode ? new LeafNodeCursor(ezbtree.btree) : new InteriorNodeCursor(ezbtree.btree)
+        // def cur = isLeafNode ? new LeafNodeCursor(viewBtree.btree) : new InteriorNodeCursor(viewBtree.btree)
         def cur
         if (isLeafNode) {
-            cur = new LeafNodeCursor(ezbtree.btree)
+            cur = new LeafNodeCursor(viewBtree.btree)
         } else {
-            cur = new InteriorNodeCursor(ezbtree.btree)
+            cur = new InteriorNodeCursor(viewBtree.btree)
         }
-        // def cur = new LeafNodeCursor(ezbtree.btree)
+        // def cur = new LeafNodeCursor(viewBtree.btree)
 
         cur.setBuf(cp);
         for (int i = 0; i < cur.numBuckets; i++) {
             def key
             if (cur.leafNode || i) {
-                def keyBuf = new byte[ezbtree.btree.uk.size]
+                def keyBuf = new byte[viewBtree.btree.uk.size]
                 cur.getKey(i, keyBuf, 0)
-                key = ezbtree.btree.uk.deserialize(keyBuf, 0)
+                key = viewBtree.btree.uk.deserialize(keyBuf, 0)
             } else {
                 // interior node has no key in its first bucket
                 assert !cur.leafNode && i == 0
                 key = parentKey
             }
-            drawBTreeElement(path + i, key, cur.leafNode)
+            drawBTreeElement(path + i, key, cur.leafNode, fillColorForBTreePage(pageid))
             if (!cur.leafNode) {
                 // assert cur instanceof InteriorNodeCursor
                 drawBTreePage(path + i, cur.getBucketPageId(i), key)
@@ -239,13 +244,28 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         }
     }
 
-    void drawBTreeElement(List<Integer> path, key, boolean leaf) {
+    def fillColorForBTreePage(int pageid) {
+        switch (pageid) {
+            case statBtree.imps.seekingWrites:
+                return darkOrange
+            case statBtree.imps.seekingReads:
+                return darkMoss
+            case statBtree.imps.sequentialWrites:
+                return lightOrange
+            case statBtree.imps.sequentialReads:
+                return lightMoss
+            default:
+                return lightGrey
+        }
+    }
+
+    void drawBTreeElement(List<Integer> path, key, boolean leaf, fillColor) {
         int x, y, cellWidth
         PFont font
         (x, y, cellWidth, font) = btreeCellCoordinate(path)
         int centerX = x + (int)(cellWidth/2)
         int centerY = y + (int)(CELL_HEIGHT/2)
-        fill(230)         // set rectangle filling color to light-grey
+        fill(fillColor)         // set rectangle filling color
         stroke(0)     // Set line drawing color to black
         rect(x, y, cellWidth, CELL_HEIGHT)
         if (leaf) {
@@ -275,7 +295,8 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
 
     private void reset() {
         cola = new Cola()
-        ezbtree = new EasyBTree()
+        viewBtree = new EasyBTree()
+        statBtree = new EasyBTree()
         contents = [:]
         insertKey = null
         searchKey = null
@@ -311,9 +332,11 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             insertBTree(insertKey)
         } else if (key == 's' && !cola.searching && !cola.merging) {
             searchKey = randomSearchKey()
+            searchBTree(searchKey)
             publishSearchResult(cola.search(searchKey, false))
         } else if (key == 'S' && !cola.searching && !cola.merging) {
             searchKey = randomSearchKey()
+            searchBTree(searchKey)
             if (!cola.search(searchKey, true)) {
                 publishSearchResult(cola.searchResult)
             }
@@ -331,11 +354,20 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     }
 
     private void insertBTree(int key) {
-        if (ezbtree.btree.getValFromKey(key)!=null) {
-            ezbtree.btree.replace(key, key)
+        statBtree.imps.clear()
+        if (viewBtree.btree.getValFromKey(key)!=null) {
+            viewBtree.btree.replace(key, key)
+            statBtree.btree.replace(key, key)
         } else {
-            ezbtree.btree.insert(key, key)
+            viewBtree.btree.insert(key, key)
+            statBtree.btree.insert(key, key)
         }
+    }
+
+    private void searchBTree(int key) {
+        statBtree.imps.clear()
+        viewBtree.btree.getValFromKey(key)  // doesn't matter for view?
+        statBtree.btree.getValFromKey(key)
     }
 
     private randomSearchKey() {
@@ -401,14 +433,14 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         int y = (int) (height / 2) + HEADER
         while (path.size() > 1) {
             int idx = path[0]
-            assert idx < ezbtree.btreeDegree
+            assert idx < viewBtree.btreeDegree
             path = path.tail()
-            int availableWidth = (int)((right - left)/(ezbtree.btreeDegree-1))
+            int availableWidth = (int)((right - left)/(viewBtree.btreeDegree-1))
             left += idx * availableWidth
             right = left + availableWidth
             y += CELL_HEIGHT + LEVEL_SPACING
         }
-        def (x, cellWidth, font) = cellX(left, right, ezbtree.btreeDegree, path[0])
+        def (x, cellWidth, font) = cellX(left, right, viewBtree.btreeDegree, path[0])
         [x, y, cellWidth, font]
     }
 }
