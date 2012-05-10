@@ -100,9 +100,6 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             if (cola.merging) {
                 stroke(blue)
                 fill(blue)
-                textFont(myFont)
-                textAlign(CENTER, TOP)
-                text("inserting $insertKey" as String, (int) width/2, 5)
                 def a = cola.levels[level].array
                 if (level == cola.mergeTarget && a.nRight) {
                     assert a.lowerBoundInclusive
@@ -122,17 +119,26 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         }
         if (cola.searching) {
             String msg = "searching ${contents[searchKey] == null ? '(missing)' : ''} $searchKey"
-            drawSearchMsg(msg)
+            drawStatusMsg(msg)
         }
         if (searchResult) {
-            String msg = "search completed: $searchResult"
-            drawSearchMsg(msg)
+            drawStatusMsg("search completed: $searchResult")
             searchResult = null
+        }
+        if (cola.merging) {
+            drawStatusMsg("inserting $insertKey")
+        } else {
+            if (insertKey) {
+                drawStatusMsg("inserted $insertKey")
+                insertKey = null
+            }
         }
         drawBTree()
     }
 
-    void drawSearchMsg(String msg) {
+    void drawStatusMsg(String msg) {
+        stroke(darkGreen)
+        fill(darkGreen)
         textFont(myFont)
         textAlign(CENTER, TOP)
         text(msg, (int) width/2, HEADER)
