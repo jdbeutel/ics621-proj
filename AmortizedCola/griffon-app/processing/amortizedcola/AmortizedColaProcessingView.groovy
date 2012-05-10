@@ -231,6 +231,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         }
         // def cur = new LeafNodeCursor(viewBtree.btree)
 
+        drawBTreeElement(path + (-1 as Integer), pageid, true, null)
         cur.setBuf(cp);
         for (int i = 0; i < cur.numBuckets; i++) {
             def key
@@ -276,9 +277,11 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         (x, y, cellWidth, font) = btreeCellCoordinate(path)
         int centerX = x + (int)(cellWidth/2)
         int centerY = y + (int)(CELL_HEIGHT/2)
-        fill(fillColor)         // set rectangle filling color
         stroke(0)     // Set line drawing color to black
-        rect(x, y, cellWidth, CELL_HEIGHT)
+        if (fillColor) {
+            fill(fillColor)         // set rectangle filling color
+            rect(x, y, cellWidth, CELL_HEIGHT)
+        }
         if (leaf) {
             fill(0)      // set text filling color to black
         } else {
