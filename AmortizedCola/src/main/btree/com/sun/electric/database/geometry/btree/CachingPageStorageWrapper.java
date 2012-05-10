@@ -58,9 +58,17 @@ public class CachingPageStorageWrapper extends CachingPageStorage {
     */
 
     /** underlying PageStorage */                 private final PageStorage                           ps;
-    /** all CachedPage instances, even evicted */ private final WeakHashMap<Integer,CachedPageImpl>   allCachedPages = new WeakHashMap<Integer,CachedPageImpl>();
+//    /** all CachedPage instances, even evicted */ private final WeakHashMap<Integer,CachedPageImpl>   allCachedPages = new WeakHashMap<Integer,CachedPageImpl>();
     /** non-evicted CachedPage instances */       private final LinkedHashMap<Integer,CachedPageImpl> cache;
     /** limit on cache.size() */                  private       int                                   cacheSize = 0;
+
+    public Set<Integer> cacheReadPages;
+    public Set<Integer> cacheWritePages;
+
+    public void clearStats() {
+        cacheReadPages = new HashSet<Integer>();
+        cacheWritePages = new HashSet<Integer>();
+    }
 
     /**
      *  An evicted page will be freed from memory (garbage
@@ -90,6 +98,7 @@ public class CachingPageStorageWrapper extends CachingPageStorage {
         this.ps = ps;
         this.cacheSize = cacheSize;
         this.cache = new LinkedHashMap<Integer,CachedPageImpl>(cacheSize+3, 0.75f, true);
+        clearStats();
         if (asyncFlush)
             throw new RuntimeException("asyncFlush is not yet supported");
     }
@@ -110,9 +119,9 @@ public class CachingPageStorageWrapper extends CachingPageStorage {
         synchronized(CachingPageStorageWrapper.this) {
             do {
                 page = cache.get(pageid);
-                if (page!=null) { readBytes = false; break; }
-                page = allCachedPages.get(pageid);
-                if (page!=null) { readBytes = false; doWait = true; break; }
+                if (page!=null) { readBytes = false; cacheReadPages.add(pageid); break; }
+//                page = allCachedPages.get(pageid);
+//                if (page!=null) { readBytes = false; doWait = true; break; }
                 page = new CachedPageImpl(pageid, new byte[ps.getPageSize()]);
                 doNotify = true;
             } while(false);
@@ -185,10 +194,10 @@ public class CachingPageStorageWrapper extends CachingPageStorage {
             this.pageid = pageid;
             this.buf = buf;
             this.isDirty = false;
-            synchronized(CachingPageStorageWrapper.this) {
-                assert !allCachedPages.containsKey(this);
-                allCachedPages.put(pageid, this);
-            }
+//            synchronized(CachingPageStorageWrapper.this) {
+//                assert !allCachedPages.containsKey(this);
+//                allCachedPages.put(pageid, this);
+//            }
         }
 
         public byte[] getBuf() { return buf; }
@@ -253,6 +262,7 @@ public class CachingPageStorageWrapper extends CachingPageStorage {
                 // be careful here: we're holding a local lock!
                 this.isDirty = true;
             }
+            cacheWritePages.add(pageid);
             touch();
         }
 
@@ -280,10 +290,10 @@ public class CachingPageStorageWrapper extends CachingPageStorage {
     }
 
     public synchronized void close() {
-        for(CachedPageImpl cp : allCachedPages.values())
-            cp.evict();
+//        for(CachedPageImpl cp : allCachedPages.values())
+//            cp.evict();
         ps.close();
         this.cache.clear();
-        this.allCachedPages.clear();
+//        this.allCachedPages.clear();
     }
 }

@@ -38,6 +38,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     def darkGreen = color(43, 117, 0)
     def blue = color(0, 0, 255)
     def lightCyan = color(132, 238, 250)
+    def darkCyan = color(32, 199, 232)
     def darkBlue = color(34, 25, 209)
     def lightOrange = color(252, 217, 141)
     def darkOrange = color(252, 187, 45)
@@ -254,9 +255,10 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
                 return darkMoss
             case statBtree.imps.sequentialReads:
                 return lightMoss
-//            case statBtree.ps.cacheReadPages:
-//            case statBtree.ps.cacheWritePages:
-//                return lightCyan
+            case statBtree.ps.cacheWritePages:
+                return darkCyan
+            case statBtree.ps.cacheReadPages:
+                return lightCyan
             default:
                 return lightGrey
         }
@@ -358,6 +360,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
 
     private void insertBTree(int key) {
         statBtree.imps.clear()
+        statBtree.ps.clearStats()
         if (viewBtree.btree.getValFromKey(key)!=null) {
             viewBtree.btree.replace(key, key)
             statBtree.btree.replace(key, key)
