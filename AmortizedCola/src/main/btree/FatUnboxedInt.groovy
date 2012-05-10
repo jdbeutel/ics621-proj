@@ -1,6 +1,6 @@
 package btree
 
-import com.sun.electric.database.geometry.btree.unboxed.UnboxedInt
+import btree.com.sun.electric.database.geometry.btree.unboxed.UnboxedInt
 
 /**
  * Created with IntelliJ IDEA.

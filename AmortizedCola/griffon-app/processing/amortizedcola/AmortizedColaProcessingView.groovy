@@ -2,12 +2,12 @@ package amortizedcola
 
 import griffon.plugins.processing.artifact.AbstractGriffonProcessingView
 import processing.core.PFont
-import com.sun.electric.database.geometry.btree.CachingPageStorage
+import btree.com.sun.electric.database.geometry.btree.CachingPageStorage
 
-import com.sun.electric.database.geometry.btree.unboxed.UnboxedInt
+import btree.com.sun.electric.database.geometry.btree.unboxed.UnboxedInt
 
-import com.sun.electric.database.geometry.btree.LeafNodeCursor
-import com.sun.electric.database.geometry.btree.InteriorNodeCursor
+import btree.com.sun.electric.database.geometry.btree.LeafNodeCursor
+import btree.com.sun.electric.database.geometry.btree.InteriorNodeCursor
 import btree.EasyBTree
 
 class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
@@ -249,14 +249,14 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             case statBtree.imps.seekingWrites:
                 return darkOrange
             case statBtree.imps.seekingReads:
-                return darkMoss
-            case statBtree.imps.sequentialWrites:
                 return lightOrange
+            case statBtree.imps.sequentialWrites:
+                return darkMoss
             case statBtree.imps.sequentialReads:
                 return lightMoss
-            case statBtree.ps.cacheReadPages:
-            case statBtree.ps.cacheWritePages:
-                return lightCyan
+//            case statBtree.ps.cacheReadPages:
+//            case statBtree.ps.cacheWritePages:
+//                return lightCyan
             default:
                 return lightGrey
         }

@@ -1,6 +1,6 @@
 package btree
 
-import com.sun.electric.database.geometry.btree.MemoryPageStorage
+import btree.com.sun.electric.database.geometry.btree.MemoryPageStorage
 
 /**
  * Created with IntelliJ IDEA.

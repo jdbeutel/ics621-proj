@@ -1,59 +1,3 @@
-package btree
-
-import btree.com.sun.electric.database.geometry.btree.PageStorage
-import btree.com.sun.electric.database.geometry.btree.CachingPageStorage
-
-///**
-// * Created with IntelliJ IDEA.
-// * User: jdb
-// * Date: 5/8/12
-// * Time: 11:59 PM
-// * To change this template use File | Settings | File Templates.
-// */
-//class InstrumentedCachingPageStorageWrapper extends CachingPageStorageWrapper {
-//
-//    def cacheReadPages
-//    def cacheWritePages
-//
-//    public InstrumentedCachingPageStorageWrapper(PageStorage ps, int cacheSize, boolean asyncFlush) {
-//        super(ps, cacheSize, asyncFlush)
-//        clearStats()
-//    }
-//
-//    void clearStats() {
-//        cacheReadPages = []
-//        cacheWritePages = []
-//    }
-//
-//    @Override
-//    public CachingPageStorage.CachedPage getPage(int pageid, boolean readBytes) {
-////        synchronized(this) {
-////            allCachedPages.clear()      // avoid using pages not currently in cache
-////        }
-////        if (cache.containsKey(pageid)) {
-////            cacheReadPages << pageid
-////        }
-//        def cp = super.getPage(pageid, readBytes)
-//        //new InstrumentedCachedPageImpl(pageid, cp)
-//        cp
-//    }
-////
-////    class InstrumentedCachedPageImpl extends CachingPageStorage.CachedPage {
-////
-////        @Delegate CachingPageStorageWrapper.CachedPageImpl delegate
-////
-////        private InstrumentedCachedPageImpl(int pageid, delegate) {
-////            this.delegate = delegate
-////        }
-////
-////        @Override
-////        void setDirty() {
-////            cacheWritePages << delegate.pageId
-////            delegate.setDirty()
-////        }
-////    }
-//}
-
 /* -*- tab-width: 4 -*-
  *
  * Electric(tm) VLSI Design System
@@ -77,10 +21,10 @@ import btree.com.sun.electric.database.geometry.btree.CachingPageStorage
  * the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
  * Boston, Mass 02111-1307, USA.
  */
-// package com.sun.electric.database.geometry.btree;
+package btree.com.sun.electric.database.geometry.btree;
 
-//import java.io.*;
-//import java.util.*;
+import java.io.*;
+import java.util.*;
 
 /**
  *  A wrapper around PageStorage that makes it a {@see
@@ -90,9 +34,9 @@ import btree.com.sun.electric.database.geometry.btree.CachingPageStorage
  *  pairs may produce undefined data, but are otherwise safe.
  *
  */
-public class InstrumentedCachingPageStorageWrapper extends CachingPageStorage {
+public class CachingPageStorageWrapper extends CachingPageStorage {
 
-    /*
+   /*
     *  There are two levels of locks: one on the CachingPageStorageWrapper
     *  object (the "global lock") and one on each CachedPage (the
     *  "local lock").  Locking rules:
@@ -141,7 +85,7 @@ public class InstrumentedCachingPageStorageWrapper extends CachingPageStorage {
      *  best-effort attempt to flush dirty pages even before a flush()
      *  is explicitly requested.
      */
-    public InstrumentedCachingPageStorageWrapper(PageStorage ps, int cacheSize, boolean asyncFlush) {
+    public CachingPageStorageWrapper(PageStorage ps, int cacheSize, boolean asyncFlush) {
         super(ps.getPageSize());
         this.ps = ps;
         this.cacheSize = cacheSize;
@@ -159,24 +103,19 @@ public class InstrumentedCachingPageStorageWrapper extends CachingPageStorage {
      *  in the cache and readBytes is false, subsequent calls to
      *  setDirty()/flush() will overwrite data previously on the page.
      */
-    public CachingPageStorage.CachedPage getPage(int pageid, boolean readBytes) {
+    public CachedPage getPage(int pageid, boolean readBytes) {
         CachedPageImpl page = null;
         boolean doWait = false;
         boolean doNotify = false;
-        synchronized(this) {
+        synchronized(CachingPageStorageWrapper.this) {
+            do {
                 page = cache.get(pageid);
-                if (page!=null) {
-                    readBytes = false;
-                } else {
-                    page = allCachedPages.get(pageid);
-                    if (page!=null) {
-                        readBytes = false;
-                        doWait = true;
-                    } else {
-                        page = new CachedPageImpl(pageid, new byte[ps.getPageSize()]);
-                        doNotify = true;
-                    }
-                }
+                if (page!=null) { readBytes = false; break; }
+                page = allCachedPages.get(pageid);
+                if (page!=null) { readBytes = false; doWait = true; break; }
+                page = new CachedPageImpl(pageid, new byte[ps.getPageSize()]);
+                doNotify = true;
+            } while(false);
         }
 
         //
@@ -185,7 +124,7 @@ public class InstrumentedCachingPageStorageWrapper extends CachingPageStorage {
         // hand-over-hand locking, so instead we do this:
         //
         if (doWait) synchronized(page) { if (!page.initialized)
-            try { page.wait(); } catch (Exception e) { throw new RuntimeException(e); } }
+                            try { page.wait(); } catch (Exception e) { throw new RuntimeException(e); } }
 
         if (readBytes) ps.readPage(pageid, page.buf, 0);
         page.touch();
@@ -201,21 +140,21 @@ public class InstrumentedCachingPageStorageWrapper extends CachingPageStorage {
     }
 
     public void writePage(int pageid, byte[] buf, int ofs) {
-        CachingPageStorage.CachedPage page = getPage(pageid, false);
+        CachedPage page = getPage(pageid, false);
         System.arraycopy(buf, ofs, page.getBuf(), 0, ps.getPageSize());
         page.setDirty();
         page.flush();
     }
 
     public void readPage(int pageid, byte[] buf, int ofs) {
-        CachingPageStorage.CachedPage page = getPage(pageid, true);
+        CachedPage page = getPage(pageid, true);
         System.arraycopy(page.getBuf(), 0, buf, ofs, ps.getPageSize());
     }
 
     /** Sets the cache size, evicting pages if necessary. */
     public void setCacheSize(int cacheSize) {
 
-        synchronized(this) {
+        synchronized(CachingPageStorageWrapper.this) {
             this.cacheSize = cacheSize;
         }
         // In order to avoid holding the global lock during evictions
@@ -223,7 +162,7 @@ public class InstrumentedCachingPageStorageWrapper extends CachingPageStorage {
         // to try multiple times.
         while(true) {
             CachedPageImpl cp = null;
-            synchronized(this) {
+            synchronized(CachingPageStorageWrapper.this) {
                 if (cache.size() <= this.cacheSize) return;
                 cp = cache.entrySet().iterator().next().getValue();
             }
@@ -236,7 +175,7 @@ public class InstrumentedCachingPageStorageWrapper extends CachingPageStorage {
     public void fsync() { ps.fsync(); }
 
     /** A page which is currently in the cache. */
-    public class CachedPageImpl extends CachingPageStorage.CachedPage {
+    public class CachedPageImpl extends CachedPage {
         private final int     pageid;
         private final byte[]  buf;
         private       boolean isDirty;
@@ -246,7 +185,7 @@ public class InstrumentedCachingPageStorageWrapper extends CachingPageStorage {
             this.pageid = pageid;
             this.buf = buf;
             this.isDirty = false;
-            synchronized(InstrumentedCachingPageStorageWrapper.this) {
+            synchronized(CachingPageStorageWrapper.this) {
                 assert !allCachedPages.containsKey(this);
                 allCachedPages.put(pageid, this);
             }
@@ -258,29 +197,29 @@ public class InstrumentedCachingPageStorageWrapper extends CachingPageStorage {
         /** Keep in mind that calling setDirty()/flush() after eviction is perfectly valid! */
         void evict() {
             boolean needFlush = false;
-            synchronized(InstrumentedCachingPageStorageWrapper.this) {
+            synchronized(CachingPageStorageWrapper.this) {
                 synchronized(this) {
                     // be careful here: we're holding a local lock!
                     cache.remove(pageid);
                     needFlush = isDirty();
                 }
-            }
+            }            
             if (needFlush) flush();
         }
 
-        /**
+        /** 
          *  Indicate that this page has been "used" for purposes of
          *  eviction.  Touching an evicted page will un-evict it.
          */
         public void touch() {
             if (cacheSize==0) return;
-            synchronized(InstrumentedCachingPageStorageWrapper.this) {
+            synchronized(CachingPageStorageWrapper.this) {
                 // will fail if evicted, but that's okay
                 cache.remove(pageid);
             }
             while(true) {
                 // use this spinlock-like approach to avoid evicting while holding the lock
-                synchronized(InstrumentedCachingPageStorageWrapper.this) {
+                synchronized(CachingPageStorageWrapper.this) {
                     if (cache.size() < cacheSize) {
                         cache.put(pageid, this);
                         return;
@@ -348,4 +287,3 @@ public class InstrumentedCachingPageStorageWrapper extends CachingPageStorage {
         this.allCachedPages.clear();
     }
 }
-

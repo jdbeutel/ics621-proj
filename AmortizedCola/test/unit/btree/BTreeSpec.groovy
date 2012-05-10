@@ -1,8 +1,8 @@
 package btree
 
 import spock.lang.Specification
-import com.sun.electric.database.geometry.btree.LeafNodeCursor
-import com.sun.electric.database.geometry.btree.InteriorNodeCursor
+import btree.com.sun.electric.database.geometry.btree.LeafNodeCursor
+import btree.com.sun.electric.database.geometry.btree.InteriorNodeCursor
 import spock.lang.Unroll
 
 class BTreeSpec extends Specification {
