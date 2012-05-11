@@ -1,6 +1,5 @@
 package btree
 
-import btree.com.sun.electric.database.geometry.btree.CachingPageStorage
 import btree.com.sun.electric.database.geometry.btree.CachingPageStorageWrapper
 import btree.com.sun.electric.database.geometry.btree.unboxed.Pair
 import btree.com.sun.electric.database.geometry.btree.BTree
@@ -18,7 +17,7 @@ class EasyBTree {
 
     static final MAX_CACHE_PAGES = 8
 
-    // 36 for 2 (breaks BTree), 48 for 3, or w/ FatUnboxedInt(6) value, 60 for 4 or 72 for 5
+    // 36 for 2 (breaks BTree), 48 for 3 (doesn't balance properly), or w/ FatUnboxedInt(6) value, 60 for 4 or 72 for 5
     InstrumentedMemoryPageStorage imps = new InstrumentedMemoryPageStorage(72)
 
     def ps = new CachingPageStorageWrapper(imps, MAX_CACHE_PAGES, false)

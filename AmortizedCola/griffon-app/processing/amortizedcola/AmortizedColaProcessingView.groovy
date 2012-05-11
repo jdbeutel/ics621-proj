@@ -215,6 +215,11 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
 
     private void drawBTree() {
         drawBTreePage([], viewBtree.btree.rootpage, 'X')
+        statBtree.ps.cache.entrySet().eachWithIndex { entry, idx ->
+            def path = [-(idx+1)]
+            assert isCachePath(path)
+            drawBTreePage(path, entry.key, 'X')
+        }
     }
 
     private void drawBTreePage(List<Integer> path, int pageid, parentKey) {
@@ -245,11 +250,15 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
                 key = parentKey
             }
             drawBTreeElement(path + i, key, cur.leafNode, fillColorForBTreePage(pageid))
-            if (!cur.leafNode) {
+            if (!isCachePath(path) && !cur.leafNode) {    // recurse
                 // assert cur instanceof InteriorNodeCursor
                 drawBTreePage(path + i, cur.getBucketPageId(i), key)
             }
         }
+    }
+
+    private boolean isCachePath(List<Integer> path) {
+        path && path[0] < 0
     }
 
     def fillColorForBTreePage(int pageid) {
@@ -299,7 +308,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             rotate(radians(90))     // back to horizontal
         }
         translate(-centerX, -centerY)
-        if (!leaf) {
+        if (!leaf && !isCachePath(path)) {
             stroke(red)  // Set line drawing color to red
             def (childX, childY, childCellWidth) = btreeCellCoordinate(path + 0)
             drawLookAheadArrow(centerX, y, childX, childY, childCellWidth)
@@ -450,7 +459,14 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             int idx = path[0]
             assert idx < viewBtree.btreeDegree
             path = path.tail()
-            int availableWidth = (int)((right - left)/(viewBtree.btreeDegree-1))
+            int availableWidth
+            if (idx < 0) {     // cache path
+                availableWidth = (int)((right - left)/(statBtree.ps.cacheSize + 2))
+                idx = -idx
+                y = height - 2 * (CELL_HEIGHT + LEVEL_SPACING)
+            } else {
+                availableWidth = (int)((right - left)/(viewBtree.btreeDegree-1))
+            }
             left += idx * availableWidth
             right = left + availableWidth
             y += CELL_HEIGHT + LEVEL_SPACING
