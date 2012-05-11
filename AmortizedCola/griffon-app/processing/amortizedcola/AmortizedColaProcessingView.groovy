@@ -69,6 +69,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         myFont = createFont("SansSerif", 18)
         fonts = [font16, font14, font12, font10, font8, font6, font4]
         noLoop()
+        reportHeader()
     }
 
     private drawLegend() {
@@ -97,13 +98,17 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         text("searches = ${cola.nSearches}" as String, (int) width - 20, (int) 50)
 
         // keys
+        textFont(font16)
         text("insert: [i]" as String, (int) width - 20, (int) 80)
         text("insert stepwise: [I]" as String, (int) width - 20, (int) 100)
         text("search: [s]" as String, (int) width - 20, (int) 120)
         text("search stepwise: [S]" as String, (int) width - 20, (int) 140)
-        text("step: [space]" as String, (int) width - 20, (int) 160)
-        text("reset consecutive: [C]" as String, (int) width - 20, (int) 180)
-        text("reset random: [R]" as String, (int) width - 20, (int) 200)
+        text("step (COLA): [space]" as String, (int) width - 20, (int) 160)
+        text("reset -     " as String, (int) width - 20, (int) 180)
+        text("consecutive: [C]" as String, (int) width - 20, (int) 200)
+        text("reverse consecutive: [V]" as String, (int) width - 20, (int) 220)
+        text("pseudo-random: [P]" as String, (int) width - 20, (int) 240)
+        text("really random: [R]" as String, (int) width - 20, (int) 260)
     }
 
     synchronized void draw() {
@@ -377,16 +382,25 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         searchRand = new Random(6)
     }
 
+    String sequenceType = 'C'
+
     synchronized void keyTyped() {
-        if (key == 'R') {
+        if (key == 'P') {
+            sequenceType = 'P'
             rand = new Random(42)
             reset()
+        } else if (key == 'R') {
+            sequenceType = 'R'
+            rand = new Random()
+            reset()
         } else if (key == 'C') {
+            sequenceType = 'C'
             sequence = 1
             sequenceStep = 1
             rand = null
             reset()
         } else if (key == 'V') {
+            sequenceType = 'V'
             sequence = 999
             sequenceStep = -1
             rand = null
@@ -397,6 +411,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             contents[insertKey] = value
             cola.insert(insertKey, value, false)
             insertBTree(insertKey)
+            report('i', insertKey)
         } else if (key == 'I' && !cola.merging && !cola.searching) {
             insertKey = nextInsertKey
             def value = "value $insertKey"
@@ -407,6 +422,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             searchKey = randomSearchKey()
             searchBTree(searchKey)
             publishSearchResult(cola.search(searchKey, false))
+            report('s', searchKey)
         } else if (key == 'S' && !cola.searching && !cola.merging) {
             searchKey = randomSearchKey()
             searchBTree(searchKey)
@@ -416,14 +432,30 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         } else if (key == ' ') {
             if (cola.merging) {
                 cola.mergeStep()
+                if (!cola.merging) {
+                    report('I', insertKey)
+                }
             }
             if (cola.searching) {
                 if (!cola.searchStep(true)) {
                     publishSearchResult(cola.searchResult)
+                    report('S', searchKey)
                 }
             }
         }
         redraw()
+    }
+
+    private void reportHeader() {
+        println 'sequence type, action, key, N, inserts, searches, ' +
+                'COLA deamortized seeks, COLA blocks written, COLA blocks read, ' +
+                'BTree seeks, BTree blocks written, BTree block read'
+    }
+
+    private void report(action, key) {
+        println "$sequenceType, $action, $key, ${cola.getN()}, ${cola.nInserts}, ${cola.nSearches}, " +
+                "${cola.nSeeks}, ${cola.NBlocksWritten}, ${cola.NBlocksRead}, " +
+                "${statBtree.imps.nSeeks}, ${statBtree.imps.nBlocksWritten}, ${statBtree.imps.nBlocksRead}"
     }
 
     private void insertBTree(int key) {
