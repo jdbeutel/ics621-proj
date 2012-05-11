@@ -10,6 +10,7 @@ class Array {
     final int k                   // the number of the level of this Array
     final Element[] elements
     final int maxItems
+    final int elementsPerBlock
 
     int nItems = 0
     int nRealLaps = 0
@@ -22,9 +23,13 @@ class Array {
     int searchIndex, mostRecentSearchIndex, searchLowerBound
     def searchKey
 
-    Array(int k) {
+    int nBlocksRead = 0
+    int nBlocksWritten = 0
+
+    Array(int k, int elementsPerBlock) {
         assert k > 0
         this.k = k
+        this.elementsPerBlock = elementsPerBlock
         elements = new Element[2**k]
         maxItems = 2**(k-1)
     }
@@ -52,6 +57,8 @@ class Array {
     def search(key, int lower, boolean stepping = false) {
         assert !merging && !searching
         searching = true
+        nBlocksRead += (int)(8/elementsPerBlock)    // approximation; may find sooner
+        // not counting blocks read to get real LAP, supposing that the dup LAP has a copy of the pointer
         assert key != null
         assert lowerBoundInclusive <= upperBoundExclusive
         if (lower < lowerBoundInclusive) {
@@ -169,11 +176,15 @@ class Array {
                 assert elements[srcIdx-1].key < elements[srcIdx].key
             }
         }
+        nBlocksWritten += Math.ceil(nRealLaps/elementsPerBlock)
+        target.nBlocksRead += Math.ceil(target.totalElements/elementsPerBlock)
     }
 
     void startMerge() {
         assert !merging && !searching
         merging = true
+        assert nLeft == 0   // for nBlocksWritten++ check
+        nBlocksRead += Math.ceil(nRealLaps/elementsPerBlock)
     }
 
     void addItem(Item item) {
@@ -227,6 +238,9 @@ class Array {
 
     private void addElement(Element x) {
         assert merging && !searching
+        if (nLeft % elementsPerBlock == 0) {
+            nBlocksWritten++
+        }
         if (nRealLaps && nLeft % 4 == 0) {  // need to add a duplicate look-ahead pointer here too
             def d = new DupLap(left: lastRealLapIdx, right: lastRealLapIdx)
             elements[nLeft++] = d

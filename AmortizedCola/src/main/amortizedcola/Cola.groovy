@@ -8,6 +8,7 @@ package amortizedcola
 class Cola {
 
     final static DISK_LEVEL = 5     // first level not in memory
+    final static ELEMENTS_PER_BLOCK = 4     // for parity w/ BTree
 
     int nLevels = 0
     List<Level> levels = []
@@ -97,7 +98,7 @@ class Cola {
 
     private int addLevel() {
         def k = ++nLevels
-        levels[k] = new Level(k)
+        levels[k] = new Level(k, ELEMENTS_PER_BLOCK)
         k
     }
 
@@ -112,13 +113,16 @@ class Cola {
             def itr = levels[k].itemIterator
             iterators[k] = itr
             nextItems[k] = itr.hasNext() ? itr.next() : null
-            if (k >= DISK_LEVEL) {
+            if (k >= DISK_LEVEL && nextItems[k]) {
                 nSeeks++
             }
         }
         levels[mergeTarget].startMerge()
         if (mergeTarget >= DISK_LEVEL) {
             nSeeks++
+            if (levels[mergeTarget].array.nRealLaps) {
+                nSeeks++
+            }
         }
         if (!stepping) {
             //noinspection GroovyEmptyStatementBody
@@ -142,7 +146,7 @@ class Cola {
             for (k in (mergeTarget-1)..1) {
                 levels[k].clear()
                 levels[k].addLaps(levels[k+1])
-                if (k >= DISK_LEVEL) {
+                if (k >= DISK_LEVEL && levels[k].array.nRealLaps) {
                     nSeeks++
                 }
             }
@@ -172,5 +176,21 @@ class Cola {
 
     def getNItems() {
         levels[1..nLevels].array.nItems
+    }
+
+    int getNBlocksRead() {
+        int n = 0
+        for (int k = DISK_LEVEL; k <= nLevels; k++) {
+            n += levels[k].NBlocksRead
+        }
+        n
+    }
+
+    int getNBlocksWritten() {
+        int n = 0
+        for (int k = DISK_LEVEL; k <= nLevels; k++) {
+            n += levels[k].NBlocksWritten
+        }
+        n
     }
 }

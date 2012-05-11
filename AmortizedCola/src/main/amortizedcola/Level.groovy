@@ -14,10 +14,18 @@ class Level {
     final int k                   // the number of this level
     final Array array
 
-    Level(int k) {
+    Level(int k, int elementsPerBlock) {
         assert k > 0
         this.k = k
-        array = new Array(k)
+        array = new Array(k, elementsPerBlock)
+    }
+
+    int getNBlocksRead() {
+        array.nBlocksRead
+    }
+
+    int getNBlocksWritten() {
+        array.nBlocksWritten
     }
 
     def search(key, int lower, boolean stepping = false) {
