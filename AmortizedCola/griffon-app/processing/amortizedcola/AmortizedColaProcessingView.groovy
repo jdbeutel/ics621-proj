@@ -82,15 +82,28 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         textAlign(LEFT, TOP)
         text("Amortized Cola (k-way)" as String, 20, 10)
         textAlign(RIGHT, TOP)
-        text("N = ${cola.getN()}" as String, (int) southWestX-20, (int) y)
-        text("deamortized seeks = ${cola.nSeeks}" as String, (int) southWestX-20, (int) y + 20)
-        text("blocks written = ${cola.NBlocksWritten}" as String, (int) southWestX-20, (int) y + 40)
-        text("blocks read = ${cola.NBlocksRead}" as String, (int) southWestX-20, (int) y + 60)
-        text("inserts = ${cola.nInserts}" as String, (int) southWestX-20, (int) y + 80)
-        text("searches = ${cola.nSearches}" as String, (int) southWestX-20, (int) y + 100)
-        text("RAM" as String, (int) x + (x - southWestX) - 10, (int) y + 80)
+        text("deamortized seeks = ${cola.nSeeks}" as String, (int) southWestX-20, (int) y)
+        text("blocks written = ${cola.NBlocksWritten}" as String, (int) southWestX-20, (int) y + 20)
+        text("blocks read = ${cola.NBlocksRead}" as String, (int) southWestX-20, (int) y + 40)
+
         textAlign(LEFT, TOP)
-        text("disk" as String, (int) x + (x - southWestX) + 30, (int) y + 110)
+        text("RAM" as String, (int) southWestX + 20, (int) y + 80)
+        textAlign(RIGHT, TOP)
+        text("disk" as String, (int) southWestX - 30, (int) y + 110)
+
+        textAlign(RIGHT, TOP)
+        text("N = ${cola.getN()}" as String, (int) width - 20, (int) 10)
+        text("inserts = ${cola.nInserts}" as String, (int) width - 20, (int) 30)
+        text("searches = ${cola.nSearches}" as String, (int) width - 20, (int) 50)
+
+        // keys
+        text("insert: [i]" as String, (int) width - 20, (int) 80)
+        text("insert stepwise: [I]" as String, (int) width - 20, (int) 100)
+        text("search: [s]" as String, (int) width - 20, (int) 120)
+        text("search stepwise: [S]" as String, (int) width - 20, (int) 140)
+        text("step: [space]" as String, (int) width - 20, (int) 160)
+        text("reset consecutive: [C]" as String, (int) width - 20, (int) 180)
+        text("reset random: [R]" as String, (int) width - 20, (int) 200)
     }
 
     synchronized void draw() {
@@ -226,10 +239,10 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         text("B+ Tree (max degree = ${viewBtree.btreeDegree - 1})" as String, 20, y + 10)
 
         drawBTreePage([], viewBtree.btree.rootpage, 'X')
-        drawCache()
+        drawStatsAndCache()
     }
 
-    private void drawCache() {
+    private void drawStatsAndCache() {
         def (leftX, y, cellWidth) = btreeCellCoordinate([-1, -1])
         leftX -= cellWidth
         y -= 30
@@ -241,6 +254,12 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         fill(darkBlue)
         textAlign(CENTER, TOP)
         text("cache (max size = ${statBtree.ps.cacheSize})" as String, (int) (width / 2), (int) y)
+
+        textAlign(CENTER, BOTTOM)
+        def stats = "seeks = ${statBtree.imps.nSeeks}, blocks written = ${statBtree.imps.nBlocksWritten}, " +
+                "blocks read = ${statBtree.imps.nBlocksRead}"
+        text(stats as String, (int) (width / 2), (int) y - 20)
+
         textAlign(LEFT, TOP)
         text("less recently used" as String, (int) leftX + 10, (int) y)
         textAlign(RIGHT, TOP)
