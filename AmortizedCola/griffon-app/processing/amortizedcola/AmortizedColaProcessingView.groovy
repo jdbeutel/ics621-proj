@@ -78,13 +78,14 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         stroke(darkBlue)
         rect((int) southWestX-7, (int) y-10, (int) (x - southWestX) * 2 + 20, (int) southWestY - y + CELL_HEIGHT + 14)
         textFont(myFont)
-        textAlign(RIGHT, TOP)
         fill(darkBlue)
-        text("Amortized Cola (k-way)" as String, (int) southWestX-20, (int) y)
-        text("N = ${cola.getN()}" as String, (int) southWestX-20, (int) y + 20)
-        text("deamortized seeks = ${cola.nSeeks}" as String, (int) southWestX-20, (int) y + 40)
-        text("inserts = ${cola.nInserts}" as String, (int) southWestX-20, (int) y + 60)
-        text("searches = ${cola.nSearches}" as String, (int) southWestX-20, (int) y + 80)
+        textAlign(LEFT, TOP)
+        text("Amortized Cola (k-way)" as String, 20, 10)
+        textAlign(RIGHT, TOP)
+        text("N = ${cola.getN()}" as String, (int) southWestX-20, (int) y)
+        text("deamortized seeks = ${cola.nSeeks}" as String, (int) southWestX-20, (int) y + 20)
+        text("inserts = ${cola.nInserts}" as String, (int) southWestX-20, (int) y + 40)
+        text("searches = ${cola.nSearches}" as String, (int) southWestX-20, (int) y + 60)
         text("RAM" as String, (int) x + (x - southWestX) - 10, (int) y + 80)
         textAlign(LEFT, TOP)
         text("disk" as String, (int) x + (x - southWestX) + 30, (int) y + 110)
@@ -214,6 +215,14 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     }
 
     private void drawBTree() {
+        stroke(darkBlue)
+        int y = height/2
+        line(0, y, width, y)
+        fill(darkBlue)
+        textFont(myFont)
+        textAlign(LEFT, TOP)
+        text("B+ Tree (max degree = ${viewBtree.btreeDegree})" as String, 20, y + 10)
+
         drawBTreePage([], viewBtree.btree.rootpage, 'X')
         drawCache()
     }
@@ -228,7 +237,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
         fill(darkBlue)
         y -= 10
         textAlign(CENTER, BOTTOM)
-        text("cache" as String, (int) (width / 2), (int) y)
+        text("cache (max size = ${statBtree.ps.cacheSize})" as String, (int) (width / 2), (int) y)
         textAlign(LEFT, BOTTOM)
         text("less recently used" as String, (int) leftX, (int) y)
         textAlign(RIGHT, BOTTOM)
@@ -471,7 +480,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
     }
 
     private btreeCellCoordinate(List<Integer> path) {
-        int left = 0
+        int left = 10
         int right = width
         int y = (int) (height / 2) + HEADER
         while (path.size() > 1) {
@@ -480,8 +489,11 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             path = path.tail()
             int availableWidth
             if (idx < 0) {     // cache path
-                availableWidth = (int)((right - left)/(statBtree.ps.cacheSize + 2))
+                left += CELL_WIDTH * 2
+                right -= CELL_WIDTH * 2
+                availableWidth = (int)((right - left)/(statBtree.ps.cacheSize))
                 idx = -idx
+                idx--
                 y = height - 2 * (CELL_HEIGHT + LEVEL_SPACING)
             } else {
                 availableWidth = (int)((right - left)/(viewBtree.btreeDegree-1))
@@ -490,7 +502,7 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
             right = left + availableWidth
             y += CELL_HEIGHT + LEVEL_SPACING
         }
-        def (x, cellWidth, font) = cellX(left, right, viewBtree.btreeDegree, path[0])
+        def (x, cellWidth, font) = cellX(left, right, viewBtree.btreeDegree + 1, path[0])
         [x, y, cellWidth, font]
     }
 }
