@@ -215,6 +215,25 @@ class AmortizedColaProcessingView extends AbstractGriffonProcessingView {
 
     private void drawBTree() {
         drawBTreePage([], viewBtree.btree.rootpage, 'X')
+        drawCache()
+    }
+
+    private void drawCache() {
+        def (leftX, y, cellWidth) = btreeCellCoordinate([-1, -1])
+        leftX -= cellWidth
+        fill(lightCyan)
+        stroke(darkBlue)
+        rect((int) leftX, (int) y-10, (int) (width - leftX * 2), (int) CELL_HEIGHT + 20)
+        textFont(myFont)
+        fill(darkBlue)
+        y -= 10
+        textAlign(CENTER, BOTTOM)
+        text("cache" as String, (int) (width / 2), (int) y)
+        textAlign(LEFT, BOTTOM)
+        text("less recently used" as String, (int) leftX, (int) y)
+        textAlign(RIGHT, BOTTOM)
+        text("more recently used" as String, (int)(width - leftX), (int) y)
+
         statBtree.ps.cache.entrySet().eachWithIndex { entry, idx ->
             def path = [-(idx+1)]
             assert isCachePath(path)

@@ -11,7 +11,7 @@ import btree.com.sun.electric.database.geometry.btree.MemoryPageStorage
  */
 class InstrumentedMemoryPageStorage extends MemoryPageStorage {
 
-    int lastpage = -1
+    int lastpage = -42  // not -1, so initial write (page 0) counts as a seek
     def sequentialReads, sequentialWrites, seekingReads, seekingWrites
 
     InstrumentedMemoryPageStorage(int nBytes) {
